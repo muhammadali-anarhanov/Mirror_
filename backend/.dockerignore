@@ -1,0 +1,6 @@
+.env
+.env.*
+!*.example
+api
+coverage.out
+**/*_test.go

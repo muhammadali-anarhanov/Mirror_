@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mirror}
+      POSTGRES_DB: ${POSTGRES_DB:-mirror}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  migrate:
+    build: ./backend
+    command: [migrate]
+    environment: &backend-env
+      DATABASE_URL: postgres://${POSTGRES_USER:-mirror}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mirror}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET with at least 32 random bytes}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      APP_ENV: development
+      PORT: 8080
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_PRODUCT_BUCKET: ${SUPABASE_PRODUCT_BUCKET:-product-images}
+      SUPABASE_TRYON_BUCKET: ${SUPABASE_TRYON_BUCKET:-tryon-images}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+  api:
+    build: ./backend
+    environment: *backend-env
+    ports:
+      - '127.0.0.1:${PORT:-8080}:8080'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+volumes:
+  postgres-data:

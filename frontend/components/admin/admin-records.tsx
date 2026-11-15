@@ -86,7 +86,7 @@ function scopedDemoRows(section: string, scopeMode: "all" | "brand" | "store") {
 export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode = "all" }: { section: string; searchTerm: string; readOnly?: boolean; scopeMode?: "all" | "brand" | "store" }) {
   const definition = SECTION_DEFINITIONS[section]
   const isReadOnly = Boolean(readOnly || definition.readOnly)
-  const [rows, setRows] = useState<AdminRecord[]>(() => scopedDemoRows(section, scopeMode))
+  const [rows, setRows] = useState<AdminRecord[]>(() => catalogEnabled && section === "products" ? [] : scopedDemoRows(section, scopeMode))
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [tableQuery, setTableQuery] = useState("")
   const [sortKey, setSortKey] = useState(definition.columns[0]?.key ?? "")
@@ -119,7 +119,7 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
   }, [imagePreviews])
 
   useEffect(() => {
-    setRows(scopedDemoRows(section, scopeMode))
+    setRows(catalogEnabled && section === "products" ? [] : scopedDemoRows(section, scopeMode))
     setPage(1)
     setFilters({})
     setSelectedIds([])

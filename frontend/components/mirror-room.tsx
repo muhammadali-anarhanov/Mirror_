@@ -365,7 +365,7 @@ const getColorName = (color: string, language: Language) =>
   mirrorColorTranslations[language][color] ?? color;
 
 const fetchProducts = async (url: string): Promise<Product[]> => {
-  const response = await fetch(url, { credentials: "include" });
+  const response = await apiFetch(url);
   if (!response.ok) {
     throw new Error(`Catalog request failed (${response.status})`);
   }
