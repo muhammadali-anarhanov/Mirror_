@@ -10,12 +10,14 @@ import (
 
 type Config struct {
 	DatabaseURL, SupabaseURL, ServiceKey, ProductBucket, TryonBucket, JWTSecret, Port, FrontendURL string
+	FashnAPIKey                                                                                    string
+	FashnPaidRequests                                                                              bool
 	Production                                                                                     bool
 	MaxConns                                                                                       int32
 }
 
 func Load() (Config, error) {
-	c := Config{DatabaseURL: os.Getenv("DATABASE_URL"), SupabaseURL: strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"), ServiceKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"), ProductBucket: env("SUPABASE_PRODUCT_BUCKET", "product-images"), TryonBucket: env("SUPABASE_TRYON_BUCKET", "tryon-images"), JWTSecret: os.Getenv("JWT_SECRET"), Port: env("PORT", "8080"), FrontendURL: strings.TrimRight(os.Getenv("FRONTEND_URL"), "/"), Production: os.Getenv("APP_ENV") == "production", MaxConns: 5}
+	c := Config{FashnAPIKey: strings.TrimSpace(os.Getenv("FASHN_API_KEY")), FashnPaidRequests: os.Getenv("FASHN_ENABLE_PAID_REQUESTS") == "true", DatabaseURL: os.Getenv("DATABASE_URL"), SupabaseURL: strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"), ServiceKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"), ProductBucket: env("SUPABASE_PRODUCT_BUCKET", "product-images"), TryonBucket: env("SUPABASE_TRYON_BUCKET", "tryon-images"), JWTSecret: os.Getenv("JWT_SECRET"), Port: env("PORT", "8080"), FrontendURL: strings.TrimRight(os.Getenv("FRONTEND_URL"), "/"), Production: os.Getenv("APP_ENV") == "production", MaxConns: 5}
 	if c.DatabaseURL == "" || len(c.JWTSecret) < 32 || c.FrontendURL == "" {
 		return c, errors.New("DATABASE_URL, JWT_SECRET (32+ bytes), FRONTEND_URL are required")
 	}

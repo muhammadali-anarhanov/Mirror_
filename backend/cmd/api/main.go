@@ -25,6 +25,23 @@ func main() {
 	}
 }
 func run() error {
+	if e := config.LoadDotEnv(); e != nil {
+		return e
+	}
+	if len(os.Args) > 1 && os.Args[1] == "check-fashn-config" {
+		checked, configErr := config.Load()
+		if checked.FashnAPIKey == "" {
+			return errors.New("FASHN_API_KEY is not configured")
+		}
+		missing := []string{}
+		for _, setting := range []struct{ name, value string }{{"DATABASE_URL", checked.DatabaseURL}, {"JWT_SECRET", checked.JWTSecret}, {"FRONTEND_URL", checked.FrontendURL}, {"SUPABASE_URL", checked.SupabaseURL}, {"SUPABASE_SERVICE_ROLE_KEY", checked.ServiceKey}} {
+			if setting.value == "" {
+				missing = append(missing, setting.name)
+			}
+		}
+		slog.Info("FASHN_API_KEY loaded (value hidden)", "paid_requests_enabled", checked.FashnPaidRequests, "runtime_config_valid", configErr == nil, "missing_settings", missing)
+		return nil
+	}
 	c, e := config.Load()
 	if e != nil {
 		return e
@@ -79,7 +96,7 @@ func run() error {
 			return e
 		}
 	}
-	if e = db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM public.mirror_schema_migrations WHERE version='002_operations.sql')").Scan(&migrated); e != nil || !migrated {
+	if e = db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM public.mirror_schema_migrations WHERE version='003_fashn.sql')").Scan(&migrated); e != nil || !migrated {
 		return errors.New("run migrations before starting API")
 	}
 	go func() {
@@ -91,6 +108,7 @@ func run() error {
 				slog.Error("subscription maintenance failed")
 			}
 			s.Cleanup(cleanup)
+			s.PollTryons(cleanup)
 			cancel()
 			select {
 			case <-ctx.Done():

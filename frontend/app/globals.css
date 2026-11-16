@@ -4337,3 +4337,107 @@ body:has(.mirror-auth-page) {
 @media (prefers-reduced-motion: reduce) {
   .mirror-admin *, .mirror-auth *, .marketing-shell * { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.mirror-photo-upload {
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  max-width: min(90vw, 32rem);
+  padding: .6rem .9rem;
+  border-radius: .75rem;
+  background: rgba(15, 23, 42, .85);
+  color: white;
+  font-size: .8rem;
+  pointer-events: auto;
+}
+.mirror-photo-upload input { display: block; max-width: 100%; margin-top: .3rem; }
+.mirror-photo-upload p { margin-top: .4rem; }
+
+/* Keep the live camera and the selectable garment/upload panel in separate areas. */
+.mirror-room .mirror-product-card {
+  top: 128px;
+  right: 20px;
+  bottom: 20px;
+  left: auto;
+  width: 360px;
+  max-height: calc(100dvh - 148px);
+  overflow-y: auto;
+  transform: none;
+  overscroll-behavior: contain;
+}
+.mirror-room .mirror-fitting-stage { inset: 135px 405px 24px 95px; }
+.mirror-room .mirror-camera-frame { width: min(100%, 580px); height: 100%; }
+.mirror-room .mirror-selected-garment { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.mirror-room .mirror-selected-garment > img { width: 110px; height: 130px; object-fit: contain; background: rgba(255,255,255,.85); border-radius: 8px; }
+.mirror-room .mirror-selected-garment > span { font-size: 13px; line-height: 1.4; }
+.mirror-room .mirror-garment-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
+.mirror-room .mirror-garment-list button { display: flex; align-items: center; gap: 7px; min-width: 145px; padding: 6px; border: 1px solid rgba(255,255,255,.4); border-radius: 8px; background: rgba(0,0,0,.2); font-size: 11px; text-align: start; }
+.mirror-room .mirror-garment-list button[aria-pressed="true"] { border: 2px solid #8ff0cf; }
+.mirror-room .mirror-garment-list img { flex-shrink: 0; width: 44px; height: 52px; object-fit: contain; background: white; border-radius: 4px; }
+.mirror-room .mirror-garment-list svg { flex-shrink: 0; width: 14px; }
+.mirror-room .mirror-product-title h2 { max-width: 220px; white-space: normal; }
+.mirror-room .mirror-photo-upload { position: static; transform: none; width: 100%; max-width: none; margin-top: 14px; padding: 12px; border: 1px solid rgba(255,255,255,.3); background: rgba(15,23,42,.78); font-size: 12px; }
+.mirror-room .mirror-photo-upload label { display: block; font-weight: 600; }
+.mirror-room .mirror-photo-upload input { display: block; width: 100%; margin: 8px 0; }
+.mirror-room .mirror-photo-upload p { margin: 8px 0; line-height: 1.4; }
+.mirror-room .mirror-photo-upload button { padding: 6px 8px; border: 1px solid rgba(255,255,255,.4); border-radius: 6px; background: rgba(255,255,255,.1); font-size: 11px; }
+.mirror-room .mirror-uploaded-photo { display: block; max-width: 100%; height: 110px; object-fit: contain; margin: 8px 0; }
+.mirror-room .mirror-image-unavailable { display: inline-block; padding: 12px; border: 1px dashed currentColor; font-size: 12px; }
+.mirror-room .mirror-product-actions { position: sticky; bottom: -15px; padding: 10px 0; background: #554b40; z-index: 2; }
+.mirror-room .mirror-camera-media-layer .mirror-person-canvas.is-ready:not(.is-hidden) { opacity: 1; object-fit: cover; transform: scaleX(-1); }
+.mirror-room .mirror-camera-status { pointer-events: auto; max-width: min(92vw, 560px); white-space: normal; }
+.mirror-room .mirror-camera-status span { display: block; font-size: 11px; }
+.mirror-room .mirror-camera-status button { margin-top: 5px; text-decoration: underline; }
+.mirror-room .mirror-tryon-result { object-fit: contain; mask-image: none; -webkit-mask-image: none; background: #171717; }
+@media (max-width: 900px) {
+  .mirror-room .mirror-product-card { top: auto; right: 12px; bottom: 12px; left: 12px; width: auto; max-height: 49dvh; }
+  .mirror-room .mirror-fitting-stage { inset: 140px 18px calc(49dvh + 24px) 65px; }
+  .mirror-room .mirror-camera-frame { top: 0; left: 50%; width: 100%; height: 100%; transform: translateX(-50%); }
+  .mirror-room .mirror-product-preview { display: none; }
+  .mirror-room .mirror-selected-garment > img { width: 80px; height: 90px; }
+  .mirror-room .mirror-product-title h2 { max-width: 58vw; }
+  .mirror-room .mirror-camera-cover { padding: 8px; }
+  .mirror-room .mirror-camera-cover h1 { font-size: 18px; }
+  .mirror-room .mirror-camera-cover p { margin: 5px 0; font-size: 11px; }
+  .mirror-room .mirror-camera-icon { display: none; }
+}
+.mirror-room .mirror-toolbar { right: 405px; left: 95px; }
+.mirror-room .mirror-photo-upload .mirror-background-option { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; font-weight: 400; }
+.mirror-room .mirror-photo-upload .mirror-background-option input { display: inline-block; width: auto; margin: 0; }
+@media (max-width: 900px) {
+  .mirror-room .mirror-toolbar { top: 105px; left: 65px; right: 18px; }
+}
+/* Keep segmentation retry reachable below navigation and outside the details panel. */
+.mirror-room .mirror-camera-status { top: auto; bottom: 24px; left: 95px; width: min(500px, calc(100vw - 520px)); transform: none; }
+@media (max-width: 900px) {
+  .mirror-room .mirror-camera-status { bottom: calc(49dvh + 30px); left: 70px; width: calc(100vw - 90px); max-width: none; }
+}
+.mirror-room #mirror-segmentation-status .mirror-camera-status { position: static; width: 100%; max-width: none; margin: 8px 0; transform: none; }
+
+/* The pose canvas and raw webcam share exactly the same viewport and crop. */
+.mirror-garment-overlay { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; opacity: 0; }
+.mirror-garment-overlay.is-active { opacity: 1; }
+.mirror-room.is-ar-live .mirror-camera-media-layer { inset: 135px 405px 24px 95px; }
+.mirror-room.is-ar-live .mirror-source-video.is-live-background { object-fit: contain; object-position: center; }
+.mirror-ar-controls { padding: 12px; margin-bottom: 14px; border: 1px solid rgba(143,240,207,.6); border-radius: 10px; background: rgba(15,23,42,.8); }
+.mirror-ar-controls > label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.mirror-ar-controls p, .mirror-ar-controls small { display: block; margin: 8px 0; font-size: 12px; line-height: 1.4; }
+.mirror-ar-shirts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mirror-ar-shirts button { padding: 7px; border: 2px solid transparent; border-radius: 8px; background: rgba(255,255,255,.13); }
+.mirror-ar-shirts button[aria-pressed="true"] { border-color: #8ff0cf; }
+.mirror-ar-shirts img { display: block; width: 100%; height: 95px; object-fit: contain; }
+.mirror-ar-shirts span { display: block; font-size: 12px; }
+.mirror-pose-status { padding: 9px; margin: 8px 0; border-radius: 6px; background: rgba(0,0,0,.25); font-size: 12px; line-height: 1.4; }
+.mirror-pose-status.is-tracking { color: #b2ffe2; }
+.mirror-pose-status.is-error { color: #ffd3c8; }
+.mirror-pose-status button { display: block; margin-top: 7px; padding: 5px; border: 1px solid currentColor; border-radius: 5px; }
+@media (max-width: 900px) {
+  .mirror-room.is-ar-live .mirror-camera-media-layer { inset: 140px 18px calc(49dvh + 24px) 65px; }
+  .mirror-ar-shirts img { height: 70px; }
+}
+@media (max-width: 900px) and (orientation: landscape) {
+  .mirror-room.is-ar-live .mirror-camera-media-layer, .mirror-room.is-ar-live .mirror-fitting-stage { inset: 105px calc(42vw + 16px) 12px 65px; }
+  .mirror-room.is-ar-live .mirror-product-card { top: 84px; bottom: 12px; left: auto; right: 12px; width: 40vw; max-height: calc(100dvh - 96px); }
+}

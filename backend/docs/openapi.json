@@ -4313,7 +4313,7 @@
     },
     "/api/v1/try-on": {
       "post": {
-        "summary": "503: provider unavailable; no image persistence or credit deduction",
+        "summary": "Submit one paid FASHN try-on when explicitly enabled",
         "responses": {
           "400": {
             "description": "Invalid input",
@@ -4404,19 +4404,110 @@
                 }
               }
             }
+          },
+          "200": {
+            "description": "Owner-scoped try-on session; result URL present on success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryonJob"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Owner-scoped try-on session; result URL present on success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryonJob"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unsupported garment category"
           }
         },
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "description": "Required for SUPER_ADMIN. Ignored for tenant accounts; cannot change their scope.",
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
             "schema": {
               "type": "string",
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_image",
+                  "product_id",
+                  "variant_id",
+                  "consent"
+                ],
+                "properties": {
+                  "user_image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "variant_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "consent": {
+                    "type": "string",
+                    "enum": [
+                      "true"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Recover an owned session by request key without resubmitting",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owner-scoped try-on session; result URL present on success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryonJob"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No owned session"
+          },
+          "410": {
+            "description": "Session expired"
+          }
+        }
       }
     },
     "/api/v1/cart": {
@@ -5329,6 +5420,40 @@
           }
         }
       }
+    },
+    "/api/v1/try-on/{id}": {
+      "get": {
+        "summary": "Poll an owned generation session and obtain a signed private result",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owner-scoped try-on session; result URL present on success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryonJob"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No owned session"
+          },
+          "410": {
+            "description": "Session expired"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5845,6 +5970,34 @@
           "consent"
         ],
         "additionalProperties": false
+      },
+      "TryonJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "error": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result_image_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
       }
     }
   }

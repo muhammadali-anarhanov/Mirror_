@@ -122,9 +122,7 @@ func (s *Server) addCredits(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, 200, map[string]bool{"ok": true})
 }
 
-// ConsumeCredit is for a future configured provider adapter. Caller creates the session,
-// reserves credit and commits in the same transaction before dispatching provider work.
-// It is never called by the unavailable-provider route.
+// ConsumeCredit reserves one tenant credit in the caller transaction before provider submission.
 func ConsumeCredit(ctx context.Context, tx pgx.Tx, tenantID, reference string) error {
 	var status string
 	var usable bool
@@ -157,11 +155,6 @@ func ConsumeCredit(ctx context.Context, tx pgx.Tx, tenantID, reference string) e
 		return errors.New("try-on credit limit reached")
 	}
 	return e
-}
-func (s *Server) tryon(w http.ResponseWriter, r *http.Request) {
-	// No existing provider contract/credentials were found. Do not collect a face,
-	// create a fake result, invent pricing or deduct credits for unavailable AI.
-	problem(w, 503, "AI try-on provider is not configured; no image was stored or credit deducted")
 }
 
 type cartItem struct {

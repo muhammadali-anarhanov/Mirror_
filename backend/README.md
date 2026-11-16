@@ -30,3 +30,7 @@ Tests create random isolated databases and remove only those databases. The stor
 test server in the API suite is a local contract simulation. Live staging storage
 tests require MIRROR_LIVE_SUPABASE_TEST=1 and real Supabase environment values;
 they skip by default. No deployment or live project acceptance is implied by unit tests.
+
+## FASHN AI
+
+See [FASHN integration](../docs/FASHN_INTEGRATION.md) for environment loading, migration 003, asynchronous endpoints, private results and verification limits. `go run ./cmd/api check-fashn-config` checks key presence without a network request. Paid submissions default off, even when FASHN_API_KEY is present.

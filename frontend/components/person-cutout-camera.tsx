@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 
 const SEGMENTER_WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.2/wasm";
 const PERSON_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite";
@@ -11,6 +12,8 @@ type PersonCutoutCameraProps = {
   videoRef: RefObject<HTMLVideoElement | null>;
   canvasRef: RefObject<HTMLCanvasElement | null>;
   active: boolean;
+  removeBackground: boolean;
+  statusTarget: HTMLElement | null;
   showPreview: boolean;
   loadingText: string;
   errorText: string;
@@ -21,6 +24,8 @@ export default function PersonCutoutCamera({
   videoRef,
   canvasRef,
   active,
+  removeBackground,
+  statusTarget,
   showPreview,
   loadingText,
   errorText,
@@ -29,9 +34,12 @@ export default function PersonCutoutCamera({
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [hasSegmentationMask, setHasSegmentationMask] = useState(false);
+  const [maskCount, setMaskCount] = useState(0);
+  const [retry, setRetry] = useState(0);
+  const [failureStage, setFailureStage] = useState("");
 
   useEffect(() => {
-    if (!active) {
+    if (!active || !removeBackground) {
       setIsLoading(false);
       setHasError(false);
       setHasSegmentationMask(false);
@@ -50,6 +58,7 @@ export default function PersonCutoutCamera({
     }
 
     let disposed = false;
+    let failed = false;
     let animationFrame = 0;
     let segmenter: import("@mediapipe/tasks-vision").ImageSegmenter | null = null;
     let maskCanvas: HTMLCanvasElement | null = null;
@@ -62,20 +71,24 @@ export default function PersonCutoutCamera({
 
     setIsLoading(true);
     setHasError(false);
+    setHasSegmentationMask(false);
+    setMaskCount(0);
+    setFailureStage("");
     onReadyChange(false);
 
-    const fail = () => {
+    const fail = (stage: string) => {
       if (disposed) return;
+      failed = true;
+      setFailureStage(stage);
       setIsLoading(false);
       setHasError(true);
       setHasSegmentationMask(false);
       onReadyChange(false);
-      segmenter?.close();
-      segmenter = null;
+      // Release the segmenter on effect cleanup, after result masks close.
     };
 
     const renderFrame = () => {
-      if (disposed || !segmenter) return;
+      if (disposed || failed || !segmenter) return;
 
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth && video.videoHeight) {
         const now = performance.now();
@@ -88,11 +101,13 @@ export default function PersonCutoutCamera({
           try {
             segmenter.segmentForVideo(video, now, (result) => {
               const masks = result.confidenceMasks ?? [];
-              const personMask = masks[1];
+              // The configured selfie_segmenter model has one foreground channel.
+              // A second channel does not exist (unlike multi-class models).
+              const personMask = masks[0];
 
               try {
                 if (!personMask) {
-                  fail();
+                  fail("No foreground mask returned");
                   return;
                 }
 
@@ -102,7 +117,7 @@ export default function PersonCutoutCamera({
                 }
 
                 if (!maskContext) {
-                  fail();
+                  fail("Canvas mask context unavailable");
                   return;
                 }
 
@@ -132,6 +147,7 @@ export default function PersonCutoutCamera({
                   isReady = true;
                   setIsLoading(false);
                   setHasSegmentationMask(true);
+                  setMaskCount(masks.length);
                   onReadyChange(true);
                 }
               } finally {
@@ -139,7 +155,7 @@ export default function PersonCutoutCamera({
               }
             });
           } catch {
-            fail();
+            fail("Frame segmentation failed");
             return;
           }
         }
@@ -187,7 +203,7 @@ export default function PersonCutoutCamera({
         segmenter = nextSegmenter;
         animationFrame = requestAnimationFrame(renderFrame);
       } catch {
-        fail();
+        fail("Model or WASM initialization failed");
       }
     };
 
@@ -198,7 +214,19 @@ export default function PersonCutoutCamera({
       cancelAnimationFrame(animationFrame);
       segmenter?.close();
     };
-  }, [active, canvasRef, onReadyChange, videoRef]);
+  }, [active, removeBackground, canvasRef, onReadyChange, videoRef, retry]);
+
+  const status = <>
+      {active && showPreview && isLoading && (
+        <p className="mirror-camera-status" role="status">{loadingText}</p>
+      )}
+      {active && showPreview && hasError && (
+        <div className="mirror-camera-status is-error" role="alert">
+          {errorText} <span>{failureStage}</span>
+          <button type="button" onClick={() => setRetry(value => value + 1)}>Retry background removal</button>
+        </div>
+      )}
+  </>;
 
   return (
     <>
@@ -209,19 +237,16 @@ export default function PersonCutoutCamera({
         muted
         aria-hidden="true"
         tabIndex={-1}
-        className={`mirror-source-video${active ? " is-live-background" : ""}${active && showPreview && (!hasSegmentationMask || hasError) ? " is-visible" : ""}`}
+        className={`mirror-source-video${active && (!hasSegmentationMask || hasError) ? " is-live-background" : ""}${active && showPreview && (!hasSegmentationMask || hasError) ? " is-visible" : ""}`}
       />
       <canvas
         ref={canvasRef}
         aria-hidden="true"
-        className={`mirror-person-canvas${!active || !showPreview ? " is-hidden" : ""}`}
+        data-segmentation-state={!active ? "off" : !removeBackground ? "disabled" : hasError ? "error" : hasSegmentationMask ? "ready" : "loading"}
+        data-confidence-mask-count={maskCount}
+        className={`mirror-person-canvas${hasSegmentationMask && !hasError ? " is-ready" : ""}${!active || !showPreview ? " is-hidden" : ""}`}
       />
-      {active && showPreview && isLoading && (
-        <p className="mirror-camera-status" role="status">{loadingText}</p>
-      )}
-      {active && showPreview && hasError && (
-        <p className="mirror-camera-status is-error" role="alert">{errorText}</p>
-      )}
+      {statusTarget ? createPortal(status, statusTarget) : status}
     </>
   );
 }

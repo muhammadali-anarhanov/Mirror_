@@ -30,6 +30,8 @@ import {
   X,
 } from "lucide-react";
 import PersonCutoutCamera from "./person-cutout-camera";
+import PoseGarmentOverlay from "./pose-garment-overlay";
+import { DEMO_AR_SHIRTS, type ARShirt } from "@/lib/pose-overlay";
 import {
   mirrorColorTranslations,
   mirrorDemoProductNames,
@@ -378,12 +380,40 @@ const fetchProducts = async (url: string): Promise<Product[]> => {
   return data as Product[];
 };
 
+type TryonJob = { submitted?: boolean; id?: string; status?: string; error?: string; result_image_url?: string };
+async function waitForTryon(job: TryonJob, cancelled: () => boolean): Promise<TryonJob | null> {
+  const deadline = Date.now() + 12 * 60 * 1000;
+  while (job.status === "PENDING") {
+    if (job.error === "SUBMISSION_UNKNOWN" || job.error === "SUBMITTING") throw new Error("Submission could not be confirmed. Do not retry generation; ask an administrator to reconcile this session.");
+    if (Date.now() > deadline) throw new Error("Generation is still pending. Check the previous try-on later; do not submit again.");
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    if (cancelled()) return null;
+    const response = await apiFetch(`/try-on/${job.id}`);
+    const next = await response.json().catch(() => null) as TryonJob | null;
+    if (!response.ok || !next) {
+      if ([404, 410].includes(response.status)) { sessionStorage.removeItem("mirror_tryon_job"); sessionStorage.removeItem("mirror_tryon_request"); }
+      throw new Error(next?.error || "Could not check generation status. Check the previous try-on before submitting again.");
+    }
+    job = next;
+  }
+  sessionStorage.removeItem("mirror_tryon_job"); sessionStorage.removeItem("mirror_tryon_request");
+  if (job.status !== "SUCCEEDED" || !job.result_image_url) throw new Error(job.error || "AI generation failed.");
+  return job;
+}
+
 const money = (amount: number, language: Language) =>
   new Intl.NumberFormat(mirrorLanguageLocale[language], {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(amount);
+
+function GarmentImage({ src, name, className }: { src: string; name: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) return <span className="mirror-image-unavailable" role="status">Garment image unavailable</span>;
+  return <img src={src} alt={name} className={className} onError={() => setFailed(true)} />;
+}
 
 function ProductPreview({
   product,
@@ -422,7 +452,7 @@ function ProductPreview({
           onClick={onSelect}
           aria-label={`${labels.selectProduct}: ${getProductName(product, language)}, ${money(product.price, language)}`}
         >
-          <img src={product.image} alt={getProductName(product, language)} />
+          <GarmentImage src={product.image} name={getProductName(product, language)} />
           <span className="mirror-side-product-name">{getProductName(product, language)}</span>
           <span className="mirror-side-product-price">{money(product.price, language)}</span>
         </button>
@@ -560,8 +590,17 @@ export default function MirrorRoom() {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [cameraStarted, setCameraStarted] = useState(false);
   const [isCameraStarting, setIsCameraStarting] = useState(false);
-  const [segmentationReady, setSegmentationReady] = useState(false);
+  const [cameraStatusTarget, setCameraStatusTarget] = useState<HTMLDivElement | null>(null);
+  const [arEnabled, setAREnabled] = useState(true);
+  const [arShirt, setARShirt] = useState<ARShirt>("blue");
+  const [poseStatusTarget, setPoseStatusTarget] = useState<HTMLDivElement | null>(null);
+  const [removeBackground, setRemoveBackground] = useState(true);
+  const [, setSegmentationReady] = useState(false);
   const [cameraError, setCameraError] = useState<MirrorCopyKey | "">("");
+  const [photoPreview, setPhotoPreview] = useState("");
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [customerPhoto, setCustomerPhoto] = useState<File | null>(null);
+  const [aiError, setAIError] = useState("");
   const [tryOnResult, setTryOnResult] = useState<string | null>(null);
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -604,8 +643,16 @@ export default function MirrorRoom() {
   const availableColors = [...new Set((currentProduct?.variants ?? []).filter((variant) => variant.inStock).map((variant) => variant.color))];
 
   useEffect(() => {
+    if (!customerPhoto) { setPhotoPreview(""); return; }
+    const url = URL.createObjectURL(customerPhoto);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [customerPhoto]);
+
+  useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      tryOnRequestId.current += 1;
     };
   }, []);
 
@@ -742,7 +789,7 @@ export default function MirrorRoom() {
     setSelectedVariantId(variant?.id ?? "");
     setTryOnResult(null);
     setIsEditOpen(false);
-    if (cameraStarted && variant && !product.demo) void requestTryOn(product, variant);
+    // Product browsing must never automatically submit a paid generation.
   };
 
   const changeProduct = (direction: "left" | "right") => {
@@ -786,46 +833,81 @@ export default function MirrorRoom() {
   };
 
   async function requestTryOn(product: Product, variant: ProductVariant) {
-    if (!window.confirm("Send this single photo to the try-on service? Temporary images are private and deleted after 15 minutes. No continuous video is sent.")) return;
+    if (isProcessingAI) return;
+    if (sessionStorage.getItem("mirror_tryon_job") || sessionStorage.getItem("mirror_tryon_request")) { setAIError("Check the previous try-on before starting another generation."); return; }
+    if (!window.confirm("Send this photo to FASHN AI for a paid try-on? Your photo is processed by FASHN. MIRROR keeps the private result for up to 15 minutes; FASHN may retain base64 outputs for 60 minutes and processing inputs for up to one day. Only this photo is sent, not continuous video.")) return;
     const requestId = ++tryOnRequestId.current;
-    const canvas = canvasRef.current;
-    if (!cameraStarted || !canvas) {
+    const video = videoRef.current;
+    if (!customerPhoto && (!cameraStarted || !video?.videoWidth)) {
       setCameraError("cameraMustStart");
       return;
     }
-    if (!segmentationReady || !canvas.width || !canvas.height) {
-      setCameraError("backgroundRemoving");
-      return;
-    }
-
+    setAIError("");
     setCameraError("");
     setIsProcessingAI(true);
     setTryOnResult(null);
     try {
-      const imageBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!imageBlob) throw new Error("Kamera tasvirini tayyorlab bo‘lmadi.");
+      let imageBlob: Blob | null = customerPhoto;
+      if (!imageBlob && video) {
+        const capture = document.createElement("canvas");
+        capture.width = video.videoWidth; capture.height = video.videoHeight;
+        capture.getContext("2d")?.drawImage(video, 0, 0);
+        imageBlob = await new Promise<Blob | null>(resolve => capture.toBlob(resolve, "image/jpeg", 0.92));
+      }
+      if (!imageBlob) throw new Error("Could not prepare the photo.");
       if (requestId !== tryOnRequestId.current) return;
       const formData = new FormData();
-      formData.append("user_image", imageBlob, "customer.png");
+      formData.append("user_image", imageBlob, customerPhoto?.name || "customer.jpg");
       formData.append("product_id", product.id);
       formData.append("variant_id", variant.id);
       formData.append("consent", "true");
-      const response = await apiFetch("/try-on", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() }, body: formData });
-      const result: unknown = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(`Try-on request failed (${response.status}).`);
-      if (!result || typeof result !== "object" || !("result_image_url" in result) || typeof result.result_image_url !== "string") {
-        throw new Error("The try-on service returned no result image.");
+      const key = crypto.randomUUID();
+      sessionStorage.setItem("mirror_tryon_request", key);
+      const response = await apiFetch("/try-on", { method: "POST", headers: { "Idempotency-Key": key }, body: formData });
+      const result = await response.json().catch(() => null) as TryonJob | null;
+      if (!response.ok) {
+        // Definitive pre-submission errors allow correction. Network/5xx failures
+        // retain the request key so reconnect can reconcile without resubmitting.
+        if (result?.submitted === false || [400, 401, 403, 409, 413, 415, 422].includes(response.status)) sessionStorage.removeItem("mirror_tryon_request");
+        const message = result?.error?.startsWith("AI generation is disabled") ? "AI generation is disabled for this demo. No image was generated or credit used. One real test requires operator approval." : result?.error;
+        throw new Error(message || `Try-on request failed (${response.status}). Check the previous try-on before trying again.`);
       }
-      if (requestId === tryOnRequestId.current) setTryOnResult(result.result_image_url);
+      if (!result?.id) throw new Error("The try-on service returned no session ID.");
+      sessionStorage.setItem("mirror_tryon_job", result.id);
+      const finished = await waitForTryon(result, () => requestId !== tryOnRequestId.current);
+      if (finished && requestId === tryOnRequestId.current) setTryOnResult(finished.result_image_url!);
     } catch (cause) {
       console.error("Try-on request error:", cause);
       if (requestId === tryOnRequestId.current) {
-        setCameraError("tryOnFailed");
+        setAIError(cause instanceof Error ? cause.message : strings.tryOnFailed);
       }
     } finally {
       if (requestId === tryOnRequestId.current) setIsProcessingAI(false);
     }
   }
+
+  const resumeTryOn = async () => {
+    let id = sessionStorage.getItem("mirror_tryon_job");
+    const key = sessionStorage.getItem("mirror_tryon_request");
+    if ((!id && !key) || isProcessingAI) { setAIError(isProcessingAI ? "Generation is already processing." : "No previous try-on in this browser session."); return; }
+    const requestId = ++tryOnRequestId.current;
+    setIsProcessingAI(true); setAIError("");
+    try {
+      if (!id && key) {
+        const lookup = await apiFetch(`/try-on?key=${encodeURIComponent(key)}`);
+        const job = await lookup.json().catch(() => null) as TryonJob | null;
+        if (!lookup.ok || !job?.id) {
+          if (lookup.status === 410) sessionStorage.removeItem("mirror_tryon_request");
+          throw new Error(job?.error || "Submission is not confirmed. Ask an administrator to reconcile before retrying.");
+        }
+        id = job.id; sessionStorage.setItem("mirror_tryon_job", id);
+      }
+      if (!id) throw new Error("No previous try-on session was found.");
+      const result = await waitForTryon({ id, status: "PENDING" }, () => requestId !== tryOnRequestId.current);
+      if (result && requestId === tryOnRequestId.current) setTryOnResult(result.result_image_url!);
+    } catch (cause) { if (requestId === tryOnRequestId.current) setAIError(cause instanceof Error ? cause.message : "Could not check the previous try-on."); }
+    finally { if (requestId === tryOnRequestId.current) setIsProcessingAI(false); }
+  };
 
   const handleTryOn = () => {
     if (currentProduct && !currentProduct.demo && selectedVariant) void requestTryOn(currentProduct, selectedVariant);
@@ -906,17 +988,20 @@ export default function MirrorRoom() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className={`mirror-room${cameraStarted ? " is-camera-live" : ""}`} dir={language === "AR" ? "rtl" : "ltr"}>
+      <main className={`mirror-room${cameraStarted ? " is-camera-live" : ""}${cameraStarted && arEnabled && !tryOnResult ? " is-ar-live" : ""}`} dir={language === "AR" ? "rtl" : "ltr"}>
       <div className="mirror-camera-media-layer">
         <PersonCutoutCamera
           videoRef={videoRef}
           canvasRef={canvasRef}
           active={cameraStarted}
+          removeBackground={removeBackground && !arEnabled}
+          statusTarget={cameraStatusTarget}
           showPreview={!tryOnResult}
           loadingText={strings.backgroundRemoving}
           errorText={strings.backgroundRemovalError}
           onReadyChange={setSegmentationReady}
         />
+        <PoseGarmentOverlay videoRef={videoRef} active={cameraStarted && arEnabled && !tryOnResult} shirt={arShirt} statusTarget={poseStatusTarget} />
       </div>
       <div className="mirror-room-shade" aria-hidden="true" />
       <div className="mirror-glass-stage" aria-hidden="true" />
@@ -1043,7 +1128,7 @@ export default function MirrorRoom() {
         onTouchEnd={handleTouchEnd}
         onWheel={handleWheel}
       >
-        {currentProduct && (
+        {currentProduct && products.length > 1 && (
           <>
             <ProductPreview
               key={prevProduct?.id ?? "previous-empty"}
@@ -1070,7 +1155,7 @@ export default function MirrorRoom() {
 
         <div className={`mirror-camera-frame ${cameraStarted ? "is-camera-on" : "is-camera-off"}`}>
           {tryOnResult && <img className="mirror-tryon-result" src={tryOnResult} alt={labels.tryOnResultAlt} />}
-          {!cameraStarted && (
+          {!cameraStarted && !tryOnResult && (
             <motion.div
               className="mirror-camera-cover"
               initial={{ opacity: 0, y: 10 }}
@@ -1097,19 +1182,7 @@ export default function MirrorRoom() {
               <span>{labels.aiProcessing}</span>
             </div>
           )}
-          {cameraStarted && (
-            <div className="mirror-camera-actions">
-              <button type="button" onClick={handleTryOn} disabled={!segmentationReady || !selectedVariant || currentProduct?.demo || isProcessingAI} className="mirror-primary-button">
-                {isProcessingAI ? <LoaderCircle className="mirror-spin" aria-hidden="true" /> : <Camera aria-hidden="true" />}
-                {strings.tryOn}
-              </button>
-              {tryOnResult && (
-                <button type="button" onClick={() => setTryOnResult(null)} className="mirror-secondary-button">
-                  <RotateCcw aria-hidden="true" /> {strings.backToCamera}
-                </button>
-              )}
-            </div>
-          )}
+
         </div>
 
         {productStatus && (
@@ -1129,6 +1202,28 @@ export default function MirrorRoom() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
         >
+          <section className="mirror-ar-controls" aria-label="Live 2D AR shirts">
+            <label><input type="checkbox" checked={arEnabled} onChange={event => { setAREnabled(event.target.checked); if (event.target.checked && !cameraStarted && !isCameraStarting) void startCamera(); }} /> Live 2D clothing overlay</label>
+            <p>Select a demo shirt to start the camera. Stand back with both shoulders and hips visible.</p>
+            <div className="mirror-ar-shirts" role="group" aria-label="Choose an AR shirt">
+              {DEMO_AR_SHIRTS.map(item => <button type="button" key={item.id} aria-pressed={arEnabled && arShirt === item.id} onClick={() => { setARShirt(item.id); setAREnabled(true); if (!cameraStarted && !isCameraStarting) void startCamera(); }}>
+                <img src={item.image} alt="" /> <span>{item.name}</span>
+              </button>)}
+            </div>
+            <div id="mirror-pose-status" ref={setPoseStatusTarget} />
+            <small>Local 2D AR demo assets. Separate from catalog products and FASHN photo generation.</small>
+          </section>
+          <div className="mirror-selected-garment">
+            <GarmentImage src={currentProduct.image} name={`Selected garment: ${getProductName(currentProduct, language)}`} />
+            <span>Selected garment · {selectedVariant ? `${selectedVariant.size} / ${getColorName(selectedVariant.color, language)}` : "Choose an available variant"}</span>
+          </div>
+          <div className="mirror-garment-list" role="group" aria-label="Choose a garment">
+            {products.map((product, index) => <button type="button" key={product.id} onClick={() => selectProduct(index)} aria-pressed={index === currentIndex}>
+              <GarmentImage src={product.image} name={getProductName(product, language)} />
+              <span>{getProductName(product, language)}</span>
+              {index === currentIndex && <Check aria-hidden="true" />}
+            </button>)}
+          </div>
           <div className="mirror-product-heading">
             <div className="mirror-product-title">
               <span className="mirror-eyebrow">{labels.categories[activeCategory]}</span>
@@ -1175,8 +1270,26 @@ export default function MirrorRoom() {
           )}
           {cartNotice && !isCartOpen && <p className="mirror-cart-notice" role="status">{strings[cartNotice]}</p>}
           {cartSyncError && <p className="mirror-inline-error" role="alert">{strings[cartSyncError]}</p>}
+          <div className="mirror-photo-upload">
+            <label className="mirror-background-option"><input type="checkbox" checked={removeBackground} disabled={arEnabled} onChange={event => setRemoveBackground(event.target.checked)} /> Remove camera background (optional)</label>
+            <div id="mirror-segmentation-status" ref={setCameraStatusTarget} aria-live="polite" />
+            <label htmlFor="mirror-customer-photo">1. Use your camera or upload a photo</label>
+            <input id="mirror-customer-photo" ref={photoInputRef} type="file" accept="image/jpeg,image/png" disabled={isProcessingAI} onChange={event => {
+              const file = event.target.files?.[0];
+              if (file && (file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png"].includes(file.type))) { event.target.value = ""; setAIError("Choose a JPEG or PNG up to 5 MiB."); return; }
+              setCustomerPhoto(file || null); setTryOnResult(null); setAIError("");
+            }} />
+            {photoPreview && <img className="mirror-uploaded-photo" src={photoPreview} alt="Your selected try-on photo" />}
+            {customerPhoto ? <div><span>Uploaded photo selected</span> <button type="button" disabled={isProcessingAI} onClick={() => { setCustomerPhoto(null); if (photoInputRef.current) photoInputRef.current.value = ""; }}>Remove photo / use camera</button></div> : <p>{cameraStarted ? "Live camera frame will be used." : "Start the camera above, or choose a photo."}</p>}
+            <p>2. Select the garment and size above, then request AI try-on.</p>
+            <p>FASHN AI produces a separate still image. The live 2D overlay above is local, approximate and free; it does not call FASHN.</p>
+            {!['Top Body', 'Pants', 'Full Body'].includes(activeCategory) && <p role="status">AI try-on supports tops, pants and full-body garments only.</p>}
+            <button type="button" disabled={isProcessingAI} onClick={() => void resumeTryOn()}>Check previous try-on</button>
+            {aiError && <p role="alert">{aiError}</p>}
+            {tryOnResult && <button type="button" onClick={() => setTryOnResult(null)}><RotateCcw aria-hidden="true" /> {strings.backToCamera}</button>}
+          </div>
           <div className="mirror-product-actions">
-            <button type="button" className="mirror-secondary-button" onClick={handleTryOn} disabled={!cameraStarted || !selectedVariant || currentProduct.demo || isProcessingAI}>
+            <button type="button" className="mirror-secondary-button" onClick={handleTryOn} disabled={(!cameraStarted && !customerPhoto) || !selectedVariant || currentProduct.demo || isProcessingAI || !["Top Body", "Pants", "Full Body"].includes(activeCategory)}>
               <Camera aria-hidden="true" /> {strings.tryOn}
             </button>
             <button type="button" className="mirror-primary-button" onClick={addToCart} disabled={!selectedVariant?.inStock || currentProduct.demo}>
