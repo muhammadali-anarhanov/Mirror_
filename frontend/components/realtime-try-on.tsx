@@ -11,11 +11,14 @@ const statusText: Record<FittingState, string> = {
   streaming: "Live Decart AI video", switching: "Sending garment…", error: "AI fitting failed.",
 };
 
+type CatalogGarment = DecartGarment & { image?: string };
+
 export default function RealtimeTryOn({ productId }: { productId: string }) {
   const root = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const session = useRef<DecartFittingSession | null>(null);
   const [product, setProduct] = useState<DecartGarment | null>(null);
+  const [catalog, setCatalog] = useState<CatalogGarment[]>([]);
   const [image, setImage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [state, setState] = useState<FittingState>("idle");
@@ -35,7 +38,8 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
         if (!/^[0-9a-f-]{36}$/i.test(productId)) throw new Error("Choose a real garment from the catalog.");
         const response = await apiFetch("/products", { signal: controller.signal });
         if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "Sign in to your branch account to load this garment." : "Catalog unavailable. Check your network and try again.");
-        const products: DecartGarment[] = await response.json();
+        const products: CatalogGarment[] = await response.json();
+        if (mounted && Array.isArray(products)) setCatalog(products.filter(p => !p.demo && p.image));
         const selected = Array.isArray(products) ? products.find(p => p.id === productId && !p.demo) : null;
         if (!selected) throw new Error("This garment is unavailable in your catalog.");
         const garment = await apiFetch(`/decart/garments/${encodeURIComponent(productId)}`, { signal: controller.signal });
@@ -82,6 +86,14 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
     return () => document.removeEventListener("fullscreenchange", changed);
   }, []);
 
+  // Switch the worn garment inside the running session (no new token or paid session).
+  function chooseGarment(next: CatalogGarment) {
+    if (next.id === product?.id || state === "switching") return;
+    setProduct(next); setImage(next.image || ""); setLoadError("");
+    window.history.replaceState(null, "", `/mirror/try-on?productId=${encodeURIComponent(next.id)}`);
+    if (active) void session.current?.switchGarment(next);
+  }
+
   async function toggleFullscreen() {
     try {
       setFullscreenError("");
@@ -99,8 +111,13 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
     </header>
     <section className={styles.stage} aria-label="AI fitting video">
       <video ref={video} data-decart-output muted playsInline autoPlay onPlaying={() => session.current?.videoPlaying()} />
-      {state !== "streaming" && <div className={styles.placeholder}><p>{statusText[state]}</p><p>{product?.name || "Select a catalog garment"}</p></div>}
+      {state !== "streaming" && state !== "switching" && <div className={styles.placeholder}><p>{statusText[state]}</p><p>{product?.name || "Select a catalog garment"}</p></div>}
     </section>
+    {catalog.length > 1 && <nav className={styles.strip} aria-label="Choose garment">
+      {catalog.map(item => <button key={item.id} className={item.id === product?.id ? styles.current : ""} aria-pressed={item.id === product?.id} disabled={state === "switching"} onClick={() => chooseGarment(item)}>
+        <img src={item.image} alt="" /><span>{item.name.replace(/^TEST - /, "")}</span>
+      </button>)}
+    </nav>}
     <footer className={styles.controls}>
       {image && <img src={image} alt={`Selected garment: ${product?.name || ""}`} />}
       <div className={styles.details}>
