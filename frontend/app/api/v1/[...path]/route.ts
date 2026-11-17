@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { hasTrustedOrigin } from "@/lib/trusted-origin"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -16,7 +17,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   }
   const mutation = !["GET", "HEAD"].includes(request.method)
   // Enforce same-origin in the proxy as well as exact-origin validation in Go.
-  if (mutation && request.headers.get("origin") !== request.nextUrl.origin) return Response.json({ error: "Origin not allowed" }, { status: 403 })
+  if (mutation && !hasTrustedOrigin(request)) return Response.json({ error: "Origin not allowed" }, { status: 403 })
   const size = Number(request.headers.get("content-length") || 0)
   if (size > 6 * 1024 * 1024) return Response.json({ error: "Request too large" }, { status: 413 })
   try {

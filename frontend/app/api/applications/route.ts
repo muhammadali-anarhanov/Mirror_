@@ -1,26 +1,9 @@
 import { NextResponse } from "next/server";
 import { applicationSubmissionSchema } from "@/lib/application-validation";
 import { applicationEvents, applications } from "@/lib/database-schema";
+import { hasTrustedOrigin } from "@/lib/trusted-origin";
 
 export const runtime = "nodejs";
-
-function hasTrustedOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? request.headers.get("host");
-
-  if (!origin || !host) {
-    return false;
-  }
-
-  try {
-    const originUrl = new URL(origin);
-    const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
-    const requestProtocol = (forwardedProtocol ?? new URL(request.url).protocol).replace(/:$/, "");
-    return originUrl.host.toLowerCase() === host.toLowerCase() && originUrl.protocol === `${requestProtocol}:`;
-  } catch {
-    return false;
-  }
-}
 
 function acceptedResponse(status = 202) {
   return NextResponse.json({ ok: true }, { status, headers: { "Cache-Control": "no-store" } });
