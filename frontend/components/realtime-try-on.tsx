@@ -160,7 +160,7 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
         {loadError && <p role="alert">{loadError}</p>}
         {state === "error" && <p role="alert">{message}</p>}
         {fullscreenError && <p role="alert">{fullscreenError}</p>}
-        <label><input type="checkbox" checked={consent} disabled={active} onChange={e => setConsent(e.target.checked)} /> I consent to streaming my camera to Decart and associated usage charges for a session of up to 30 seconds.</label>
+        <label><input type="checkbox" checked={consent} disabled={active} onChange={e => setConsent(e.target.checked)} /> I consent to streaming my camera to Decart and associated usage charges for a session of up to 60 seconds.</label>
       </div>
       <button disabled={!active && (!consent || !product || !image)} onClick={() => active ? session.current?.stop() : product && consent && void session.current?.start(product)}>{active ? "Stop AI Fitting" : "Start AI Fitting"}</button>
       {active && <button onClick={() => void video.current?.play().catch(playFailed("Playback failed. Stop and check your browser permissions."))}>Play AI video</button>}

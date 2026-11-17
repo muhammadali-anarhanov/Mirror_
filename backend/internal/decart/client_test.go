@@ -27,7 +27,7 @@ func TestTokenContractAndPrivacy(t *testing.T) {
 				} `json:"realtime"`
 			} `json:"constraints"`
 		}
-		if json.NewDecoder(r.Body).Decode(&body) != nil || body.ExpiresIn != 60 || len(body.AllowedModels) != 1 || body.AllowedModels[0] != Model || len(body.AllowedOrigins) != 1 || body.AllowedOrigins[0] != "http://localhost:3000" || body.Constraints.Realtime.MaxSessionDuration != 30 {
+		if json.NewDecoder(r.Body).Decode(&body) != nil || body.ExpiresIn != 60 || len(body.AllowedModels) != 1 || body.AllowedModels[0] != Model || len(body.AllowedOrigins) != 1 || body.AllowedOrigins[0] != "http://localhost:3000" || body.Constraints.Realtime.MaxSessionDuration != 60 {
 			t.Error("token not scoped")
 		}
 		json.NewEncoder(w).Encode(Token{APIKey: "ek_fixture", ExpiresAt: time.Now().Add(time.Minute).UTC().Format(time.RFC3339)})

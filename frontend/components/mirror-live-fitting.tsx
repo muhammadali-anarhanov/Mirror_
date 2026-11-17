@@ -79,7 +79,7 @@ export function MirrorLiveFitting({ product }: { product: (DecartGarment & { ima
             {state === "error" && <p className="mirror-camera-error" role="alert">{message || statusText.error}</p>}
             <label style={{ display: "flex", gap: 8, maxWidth: 260, margin: "0 0 14px", fontSize: 11, color: "rgba(255,250,241,.85)", textAlign: "left" }}>
               <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
-              I consent to streaming my camera to Decart and usage charges for a session of up to 30 seconds.
+              I consent to streaming my camera to Decart and usage charges for a session of up to 60 seconds.
             </label>
             <button type="button" className="mirror-primary-button" disabled={!consent || !usable} onClick={() => product && void session.current?.start(product)}>
               <Camera aria-hidden="true" /> Start AI fitting

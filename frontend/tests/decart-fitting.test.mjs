@@ -9,7 +9,7 @@ function fixture({tokenStatus=200,garmentStatus=200,connectFailure=false}={}) {
  const rt={disconnect:()=>disconnected++,on(){},setImage:async(blob,prompt)=>calls.push({setImage:blob,prompt})};
  const session=new DecartFittingSession({
   getCamera:async()=>stream,releaseCamera:()=>{},state:(s,m)=>states.push({s,m}),remote:s=>remote.push(s),
-  request:async(path,init)=>{calls.push({path,init});return path.includes('/garments/') ? new Response(new Blob(['garment'],{type:'image/png'}),{status:garmentStatus}) : Response.json({apiKey:'ek_fixture',expiresAt:new Date(Date.now()+60000).toISOString(),model:DECART_MODEL,maxSessionSeconds:30},{status:tokenStatus});},
+  request:async(path,init)=>{calls.push({path,init});return path.includes('/garments/') ? new Response(new Blob(['garment'],{type:'image/png'}),{status:garmentStatus}) : Response.json({apiKey:'ek_fixture',expiresAt:new Date(Date.now()+60000).toISOString(),model:DECART_MODEL,maxSessionSeconds:60},{status:tokenStatus});},
   loadSDK:async()=>({noopLogger:{},models:{realtime:m=>({name:m})},createDecartClient:config=>{provider=config.apiKeyProvider;return {realtime:{connect:async(input,opts)=>{calls.push({connect:input});options=opts;assert.equal(await provider(),'ek_fixture');if(connectFailure)throw {code:'WEB_RTC_ERROR'};opts.onRemoteStream(output);return rt;}}};}}),
  });
  return {session,calls,states,remote,output,get stopped(){return stopped},get disconnected(){return disconnected},get options(){return options},get provider(){return provider}};
@@ -19,7 +19,7 @@ test('selected catalog bytes initialize SDK; remote video and garment switch use
  await f.session.start(garment);
  assert.equal(f.options.model.name,DECART_MODEL);assert.equal(f.options.retries,0);
  assert.equal(await f.options.initialState.image.text(),'garment');
- assert.match(f.options.initialState.prompt.text,/Merchant Blue Jacket/);assert.match(f.options.initialState.prompt.text,/face/i);assert.match(f.options.initialState.prompt.text,/only the clothing/i);
+ assert.match(f.options.initialState.prompt.text,/Merchant Blue Jacket/);
  assert.equal(f.remote.at(-1),f.output);
  assert.notEqual(f.states.at(-1).s,'streaming'); // receiving a stream alone isn't frame proof
  f.session.videoPlaying();assert.equal(f.states.at(-1).s,'streaming');

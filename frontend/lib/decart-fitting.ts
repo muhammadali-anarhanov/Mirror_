@@ -1,7 +1,7 @@
 import type { RealTimeClient, RealTimeClientConnectOptions } from "@decartai/sdk";
 
 export const DECART_MODEL = "lucy-vton-latest";
-export const SESSION_SECONDS = 30;
+export const SESSION_SECONDS = 60;
 export type DecartGarment = {id: string; name: string; demo?: boolean};
 export type FittingState = "idle" | "camera" | "connecting" | "waiting-video" | "streaming" | "switching" | "error";
 type Dependencies = {
@@ -61,7 +61,7 @@ export class DecartFittingSession {
     return blob;
   }
   private prompt(product: DecartGarment) {
-    return `Substitute the corresponding clothing with the garment shown in the reference image: ${product.name.slice(0, 160)}. Change only the clothing. Keep the face, facial features, expression, hairstyle, skin tone, body shape, hands and background exactly unchanged.`;
+    return `Substitute the corresponding clothing with the garment shown in the reference image: ${product.name.slice(0, 160)}. Preserve the person and background.`;
   }
   async start(product: DecartGarment) {
     this.stop(false);

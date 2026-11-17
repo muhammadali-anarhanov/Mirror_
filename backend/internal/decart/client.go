@@ -14,7 +14,7 @@ import (
 )
 
 const Model = "lucy-vton-latest"
-const MaxSessionSeconds = 30
+const MaxSessionSeconds = 60
 
 type Client struct {
 	Key, BaseURL string

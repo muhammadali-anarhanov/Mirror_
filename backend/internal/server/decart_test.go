@@ -66,7 +66,7 @@ func TestDecartEndpointTokenResponseAndRateLimit(t *testing.T) {
 			}
 			var body map[string]any
 			json.Unmarshal(w.Body.Bytes(), &body)
-			if len(body) != 4 || body["apiKey"] != "ek_fixture" || body["model"] != "lucy-vton-latest" || body["maxSessionSeconds"] != float64(30) {
+			if len(body) != 4 || body["apiKey"] != "ek_fixture" || body["model"] != "lucy-vton-latest" || body["maxSessionSeconds"] != float64(60) {
 				t.Fatal("unexpected token response")
 			}
 		} else if w.Code != 429 {
