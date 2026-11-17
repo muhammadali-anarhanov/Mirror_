@@ -29,6 +29,10 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState("");
   const active = !["idle", "error"].includes(state);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  // play() rejects with AbortError when a failed session clears the stream; never let that hide the real error.
+  const playFailed = (text: string) => (e: unknown) => { if ((e as { name?: string })?.name !== "AbortError" && stateRef.current !== "error") setMessage(text); };
 
   useEffect(() => {
     let mounted = true;
@@ -75,7 +79,7 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
       remote: stream => {
         if (video.current) {
           video.current.srcObject = stream;
-          if (stream) void video.current.play().catch(() => { if (mounted) setMessage("Video playback blocked. Use Play AI video."); });
+          if (stream) void video.current.play().catch(e => { if (mounted) playFailed("Video playback blocked. Use Play AI video.")(e); });
         }
       },
     });
@@ -159,7 +163,7 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
         <label><input type="checkbox" checked={consent} disabled={active} onChange={e => setConsent(e.target.checked)} /> I consent to streaming my camera to Decart and associated usage charges for a session of up to 30 seconds.</label>
       </div>
       <button disabled={!active && (!consent || !product || !image)} onClick={() => active ? session.current?.stop() : product && consent && void session.current?.start(product)}>{active ? "Stop AI Fitting" : "Start AI Fitting"}</button>
-      {active && <button onClick={() => void video.current?.play().catch(() => setMessage("Playback failed. Stop and check your browser permissions."))}>Play AI video</button>}
+      {active && <button onClick={() => void video.current?.play().catch(playFailed("Playback failed. Stop and check your browser permissions."))}>Play AI video</button>}
     </footer>
   </main>;
 }

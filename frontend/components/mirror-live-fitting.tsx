@@ -21,6 +21,10 @@ export function MirrorLiveFitting({ product }: { product: (DecartGarment & { ima
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const active = !["idle", "error"].includes(state);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  // play() rejects with AbortError when a failed session clears the stream; never let that hide the real error.
+  const playFailed = (text: string) => (e: unknown) => { if ((e as { name?: string })?.name !== "AbortError" && stateRef.current !== "error") setMessage(text); };
   const usable = Boolean(product && product.image && !product.demo);
 
   useEffect(() => {
@@ -40,7 +44,7 @@ export function MirrorLiveFitting({ product }: { product: (DecartGarment & { ima
       remote: stream => {
         if (video.current) {
           video.current.srcObject = stream;
-          if (stream) void video.current.play().catch(() => { if (mounted) setMessage("Tap the video to play."); });
+          if (stream) void video.current.play().catch(e => { if (mounted) playFailed("Tap the video to play.")(e); });
         }
       },
     });
