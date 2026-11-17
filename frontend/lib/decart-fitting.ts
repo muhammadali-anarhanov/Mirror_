@@ -23,7 +23,7 @@ export function decartError(error: unknown): string {
   const code = (error as {code?: unknown})?.code;
   return typeof code === "string" && /^[A-Z][A-Z0-9_]{1,60}$/.test(code)
     ? `Decart error: ${code}. Check model access, billing and network, then start again.`
-    : "AI fitting could not continue. Check camera permission, authentication and Decart configuration, then start again.";
+    : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
 }
 
 export class DecartFittingSession {

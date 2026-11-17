@@ -52,4 +52,6 @@ test('stop while connecting disconnects late connection and ignores remote outpu
 test('SDK error strings and credentials are never exposed',()=>{
  assert.doesNotMatch(decartError({message:'dct_secret https://host?apiKey=secret'}),/dct_secret|apiKey/);
  assert.doesNotMatch(decartError({code:'dct_secret'}),/dct_secret/);
+ assert.match(decartError({name:'OverconstrainedError'}),/OverconstrainedError/);
+ assert.doesNotMatch(decartError({name:'dct_secret https://x'}),/dct_secret/);
 });

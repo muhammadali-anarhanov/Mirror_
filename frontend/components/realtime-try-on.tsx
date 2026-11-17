@@ -67,7 +67,7 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
       getCamera: async () => {
         if (window.self !== window.top) throw { code: "TOP_LEVEL_PAGE_REQUIRED" };
         if (!navigator.mediaDevices?.getUserMedia) throw { code: "CAMERA_HTTPS_REQUIRED" };
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, audio: false });
         // Show the plain camera while Decart connects instead of a black screen.
         if (preview.current) { preview.current.srcObject = stream; void preview.current.play().catch(() => {}); }
         return stream;
