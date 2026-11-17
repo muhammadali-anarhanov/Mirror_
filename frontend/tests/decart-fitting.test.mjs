@@ -55,5 +55,7 @@ test('SDK error strings and credentials are never exposed',()=>{
  assert.doesNotMatch(decartError({message:'dct_secret https://host?apiKey=secret'}),/dct_secret|apiKey/);
  assert.doesNotMatch(decartError({code:'dct_secret'}),/dct_secret/);
  assert.match(decartError({name:'OverconstrainedError'}),/OverconstrainedError/);
+ assert.match(decartError(new Error('Room connection failed: ICE timeout')),/ICE timeout/);
+ assert.doesNotMatch(decartError(new Error('bad https://api.decart.ai/x?api_key=ek_abc eyJhbGciOi.payload.sig dct_live_1')),/https|ek_abc|eyJ|dct_live/);
  assert.doesNotMatch(decartError({name:'dct_secret https://x'}),/dct_secret/);
 });

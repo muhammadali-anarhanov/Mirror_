@@ -13,6 +13,14 @@ type Dependencies = {
   remote: (stream: MediaStream | null) => void;
 };
 
+// Error text with URLs, tokens and keys removed, for on-screen diagnosis only.
+function safeDetail(error: unknown): string {
+  const raw = (error as {message?: unknown})?.message;
+  if (typeof raw !== "string" || !raw.trim()) return "";
+  const text = raw.replace(/\S*(https?:|wss?:)\S*/gi, "[url]").replace(/\b(eyJ[\w-]*\.[\w.-]*|ek_\w+|dct_\w+|[A-Za-z0-9_-]{24,})/g, "[secret]").replace(/\s+/g, " ").trim().slice(0, 120);
+  return text ? `: ${text}` : "";
+}
+
 // Provider errors can include URLs/tokens. Surface only safe SDK codes.
 export function decartError(error: unknown): string {
   const name = (error as {name?: unknown})?.name;
@@ -23,7 +31,7 @@ export function decartError(error: unknown): string {
   const code = (error as {code?: unknown})?.code;
   return typeof code === "string" && /^[A-Z][A-Z0-9_]{1,60}$/.test(code)
     ? `Decart error: ${code}. Check model access, billing and network, then start again.`
-    : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
+    : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name}${safeDetail(error)})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
 }
 
 export class DecartFittingSession {
