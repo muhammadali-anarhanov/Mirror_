@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { DecartFittingSession, type DecartGarment, type FittingState } from "@/lib/decart-fitting";
+import { stepGarment } from "@/lib/garment-step";
 import styles from "./realtime-try-on.module.css";
 
 const statusText: Record<FittingState, string> = {
@@ -94,6 +95,24 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
     if (active) void session.current?.switchGarment(next);
   }
 
+  function step(dir: 1 | -1) {
+    const next = stepGarment(catalog, product?.id, dir);
+    if (next) chooseGarment(next);
+  }
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const swipeX = useRef<number | null>(null);
+
+  // ← / → keys switch the garment (also during a live session).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") { e.preventDefault(); stepRef.current(1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); stepRef.current(-1); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   async function toggleFullscreen() {
     try {
       setFullscreenError("");
@@ -109,8 +128,14 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
       <strong>MIRROR AI · Decart Lucy</strong>
       <button onClick={() => void toggleFullscreen()}>{fullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}</button>
     </header>
-    <section className={styles.stage} aria-label="AI fitting video">
+    <section className={styles.stage} aria-label="AI fitting video"
+      onPointerDown={e => { swipeX.current = e.clientX; }}
+      onPointerUp={e => { const start = swipeX.current; swipeX.current = null; if (start !== null && Math.abs(e.clientX - start) > 60) step(e.clientX < start ? 1 : -1); }}>
       <video ref={video} data-decart-output muted playsInline autoPlay onPlaying={() => session.current?.videoPlaying()} />
+      {catalog.length > 1 && <>
+        <button className={`${styles.arrow} ${styles.arrowLeft}`} aria-label="Previous garment" disabled={state === "switching"} onPointerDown={e => e.stopPropagation()} onClick={() => step(-1)}>‹</button>
+        <button className={`${styles.arrow} ${styles.arrowRight}`} aria-label="Next garment" disabled={state === "switching"} onPointerDown={e => e.stopPropagation()} onClick={() => step(1)}>›</button>
+      </>}
       {state !== "streaming" && state !== "switching" && <div className={styles.placeholder}><p>{statusText[state]}</p><p>{product?.name || "Select a catalog garment"}</p></div>}
     </section>
     {catalog.length > 1 && <nav className={styles.strip} aria-label="Choose garment">

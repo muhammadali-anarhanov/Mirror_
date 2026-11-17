@@ -19,7 +19,7 @@ test('selected catalog bytes initialize SDK; remote video and garment switch use
  await f.session.start(garment);
  assert.equal(f.options.model.name,DECART_MODEL);assert.equal(f.options.retries,0);
  assert.equal(await f.options.initialState.image.text(),'garment');
- assert.match(f.options.initialState.prompt.text,/Merchant Blue Jacket/);
+ assert.match(f.options.initialState.prompt.text,/Merchant Blue Jacket/);assert.match(f.options.initialState.prompt.text,/face/i);assert.match(f.options.initialState.prompt.text,/only the clothing/i);
  assert.equal(f.remote.at(-1),f.output);
  assert.notEqual(f.states.at(-1).s,'streaming'); // receiving a stream alone isn't frame proof
  f.session.videoPlaying();assert.equal(f.states.at(-1).s,'streaming');

@@ -60,7 +60,7 @@ export class DecartFittingSession {
     return blob;
   }
   private prompt(product: DecartGarment) {
-    return `Substitute the corresponding clothing with the garment shown in the reference image: ${product.name.slice(0, 160)}. Preserve the person and background.`;
+    return `Substitute the corresponding clothing with the garment shown in the reference image: ${product.name.slice(0, 160)}. Change only the clothing. Keep the face, facial features, expression, hairstyle, skin tone, body shape, hands and background exactly unchanged.`;
   }
   async start(product: DecartGarment) {
     this.stop(false);
