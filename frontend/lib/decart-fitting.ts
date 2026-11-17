@@ -1,6 +1,7 @@
 import type { RealTimeClient, RealTimeClientConnectOptions } from "@decartai/sdk";
 
 export const DECART_MODEL = "lucy-vton-latest";
+export const SESSION_SECONDS = 30;
 export type DecartGarment = {id: string; name: string; demo?: boolean};
 export type FittingState = "idle" | "camera" | "connecting" | "waiting-video" | "streaming" | "switching" | "error";
 type Dependencies = {
@@ -91,9 +92,9 @@ export class DecartFittingSession {
       }
       const token = await response.json();
       if (epoch !== this.epoch) return;
-      if (token.model !== DECART_MODEL || typeof token.apiKey !== "string" || !token.apiKey || token.apiKey.startsWith("dct_") || token.maxSessionSeconds !== 60) throw new Error("invalid token");
+      if (token.model !== DECART_MODEL || typeof token.apiKey !== "string" || !token.apiKey || token.apiKey.startsWith("dct_") || token.maxSessionSeconds !== SESSION_SECONDS) throw new Error("invalid token");
       // No automatic retry or extra token mint on reconnect. An explicit new
-      // click is required after failure; the server caps every session at 60 s.
+      // click is required after failure; the server caps every session at SESSION_SECONDS.
       let supplied = false;
       const client = sdk.createDecartClient({logger: sdk.noopLogger, telemetry: false, apiKeyProvider: async () => {
         if (supplied || epoch !== this.epoch) throw new Error("Explicit restart required");
@@ -115,7 +116,7 @@ export class DecartFittingSession {
           if (state === "reconnecting") this.fail("Connection lost. Automatic reconnect is disabled; start again explicitly.");
         },
       };
-      this.timer = setTimeout(() => { if (epoch === this.epoch) {this.stop(); this.deps.state("idle", "The 60-second demo session has ended.");} }, 60_000);
+      this.timer = setTimeout(() => { if (epoch === this.epoch) {this.stop(); this.deps.state("idle", `The ${SESSION_SECONDS}-second demo session has ended.`);} }, SESSION_SECONDS * 1000);
       const rt = await client.realtime.connect(stream, options);
       if (epoch !== this.epoch) {rt.disconnect(); return;}
       this.rt = rt;

@@ -17,6 +17,7 @@ type CatalogGarment = DecartGarment & { image?: string };
 export default function RealtimeTryOn({ productId }: { productId: string }) {
   const root = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
+  const preview = useRef<HTMLVideoElement>(null);
   const session = useRef<DecartFittingSession | null>(null);
   const [product, setProduct] = useState<DecartGarment | null>(null);
   const [catalog, setCatalog] = useState<CatalogGarment[]>([]);
@@ -62,9 +63,12 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
       getCamera: async () => {
         if (window.self !== window.top) throw { code: "TOP_LEVEL_PAGE_REQUIRED" };
         if (!navigator.mediaDevices?.getUserMedia) throw { code: "CAMERA_HTTPS_REQUIRED" };
-        return navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        // Show the plain camera while Decart connects instead of a black screen.
+        if (preview.current) { preview.current.srcObject = stream; void preview.current.play().catch(() => {}); }
+        return stream;
       },
-      releaseCamera: () => {},
+      releaseCamera: () => { if (preview.current) preview.current.srcObject = null; },
       request: (path, init) => apiFetch(path, init, { retryAuth: path !== "/decart/token" }),
       loadSDK: () => import("@decartai/sdk"),
       state: (next, detail = "") => { if (mounted) { setState(next); setMessage(detail); } },
@@ -131,12 +135,13 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
     <section className={styles.stage} aria-label="AI fitting video"
       onPointerDown={e => { swipeX.current = e.clientX; }}
       onPointerUp={e => { const start = swipeX.current; swipeX.current = null; if (start !== null && Math.abs(e.clientX - start) > 60) step(e.clientX < start ? 1 : -1); }}>
+      <video ref={preview} muted playsInline autoPlay style={{ opacity: active && state !== "streaming" && state !== "switching" ? 1 : 0, transform: "scaleX(-1)" }} />
       <video ref={video} data-decart-output muted playsInline autoPlay onPlaying={() => session.current?.videoPlaying()} />
       {catalog.length > 1 && <>
         <button className={`${styles.arrow} ${styles.arrowLeft}`} aria-label="Previous garment" disabled={state === "switching"} onPointerDown={e => e.stopPropagation()} onClick={() => step(-1)}>‹</button>
         <button className={`${styles.arrow} ${styles.arrowRight}`} aria-label="Next garment" disabled={state === "switching"} onPointerDown={e => e.stopPropagation()} onClick={() => step(1)}>›</button>
       </>}
-      {state !== "streaming" && state !== "switching" && <div className={styles.placeholder}><p>{statusText[state]}</p><p>{product?.name || "Select a catalog garment"}</p></div>}
+      {!active && <div className={styles.placeholder}><p>{statusText[state]}</p><p>{product?.name || "Select a catalog garment"}</p></div>}
     </section>
     {catalog.length > 1 && <nav className={styles.strip} aria-label="Choose garment">
       {catalog.map(item => <button key={item.id} className={item.id === product?.id ? styles.current : ""} aria-pressed={item.id === product?.id} disabled={state === "switching"} onClick={() => chooseGarment(item)}>
@@ -151,7 +156,7 @@ export default function RealtimeTryOn({ productId }: { productId: string }) {
         {loadError && <p role="alert">{loadError}</p>}
         {state === "error" && <p role="alert">{message}</p>}
         {fullscreenError && <p role="alert">{fullscreenError}</p>}
-        <label><input type="checkbox" checked={consent} disabled={active} onChange={e => setConsent(e.target.checked)} /> I consent to streaming my camera to Decart and associated usage charges for a session of up to 60 seconds.</label>
+        <label><input type="checkbox" checked={consent} disabled={active} onChange={e => setConsent(e.target.checked)} /> I consent to streaming my camera to Decart and associated usage charges for a session of up to 30 seconds.</label>
       </div>
       <button disabled={!active && (!consent || !product || !image)} onClick={() => active ? session.current?.stop() : product && consent && void session.current?.start(product)}>{active ? "Stop AI Fitting" : "Start AI Fitting"}</button>
       {active && <button onClick={() => void video.current?.play().catch(() => setMessage("Playback failed. Stop and check your browser permissions."))}>Play AI video</button>}
