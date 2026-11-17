@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { useMarketingLanguage } from "./marketing-language";
+import { MirrorLiveFitting } from "./mirror-live-fitting";
 import {
   mirrorColorTranslations,
   mirrorInterfaceCopy,
@@ -613,13 +614,7 @@ export default function MirrorRoom() {
           </>
         )}
 
-        <div className="mirror-camera-frame is-camera-off">
-          <div className="mirror-camera-cover">
-            <span className="mirror-camera-icon"><Camera aria-hidden="true" /></span>
-            <h1>Decart Lucy · Real-time AI fitting</h1>
-            <p>Select a catalog garment and choose Try On. Camera sharing starts only after your consent on the fitting page.</p>
-          </div>
-        </div>
+        <MirrorLiveFitting product={currentProduct} />
 
         {productStatus && (
           <div className={`mirror-catalog-status ${productError ? "has-error" : ""}`} role={productError ? "alert" : "status"}>
