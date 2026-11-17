@@ -86,6 +86,10 @@ const getColorName = (color: string, language: Language) =>
 
 const fetchProducts = async (url: string): Promise<Product[]> => {
   const response = await apiFetch(url);
+  if (response.status === 401 && typeof window !== "undefined") {
+    // The catalog is tenant-scoped and needs a session: send kiosks to sign-in and back.
+    window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+  }
   if (!response.ok) {
     throw new Error(`Catalog request failed (${response.status})`);
   }

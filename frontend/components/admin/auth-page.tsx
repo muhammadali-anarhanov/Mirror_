@@ -2,6 +2,7 @@
 
 
 import { useText } from "@/components/marketing-language";
+import { safeNextPath } from "@/lib/safe-next"
 import { useState, type FormEvent } from "react"
 import { LanguageSelector } from "@/components/marketing-language"
 import Link from "next/link"
@@ -58,7 +59,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setFeedback("Signed in. Your session is ready; admin modules that still show sample data remain previews.")
       // Keep preview consoles gated in production until their sample modules are migrated.
       const liveCatalog = data.user.role === "BRAND_ADMIN"
-      window.location.assign(liveCatalog ? "/brand/products" : process.env.NODE_ENV === "production" ? "/mirror" : dashboardPathForRole(data.user.role as PlatformRole))
+      window.location.assign(safeNextPath(window.location.search) ?? (liveCatalog ? "/brand/products" : process.env.NODE_ENV === "production" ? "/mirror" : dashboardPathForRole(data.user.role as PlatformRole)))
     } catch (error) { setFeedback(error instanceof Error ? error.message : "Sign-in failed") }
   }
 
