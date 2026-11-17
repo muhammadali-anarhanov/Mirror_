@@ -26,8 +26,10 @@ test('selected catalog bytes initialize SDK; remote video and garment switch use
  await f.session.switchGarment({...garment,id:'22222222-2222-4222-8222-222222222222',name:'Second garment'});
  assert.equal(f.calls.filter(c=>c.connect).length,1);assert.equal(f.calls.filter(c=>c.setImage).length,1);
  assert.match(f.calls.find(c=>c.setImage).prompt.prompt,/Second garment/);
- await assert.rejects(f.provider(),/Explicit restart/);
+ // SDK redials (capacity queue / reconnect) reuse the same short-lived token; no extra mint.
+ assert.equal(await f.provider(),'ek_fixture');assert.equal(f.calls.filter(c=>c.path==='/decart/token').length,1);
  }finally{f.session.stop()}
+ await assert.rejects(f.provider(),/Explicit restart/);
  assert.ok(f.stopped);assert.equal(f.disconnected,1);assert.equal(f.remote.at(-1),null);
 });
 test('disabled token never opens realtime session and releases camera',async()=>{

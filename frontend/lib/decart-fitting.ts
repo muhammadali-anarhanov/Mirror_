@@ -95,10 +95,13 @@ export class DecartFittingSession {
       if (token.model !== DECART_MODEL || typeof token.apiKey !== "string" || !token.apiKey || token.apiKey.startsWith("dct_") || token.maxSessionSeconds !== SESSION_SECONDS) throw new Error("invalid token");
       // No automatic retry or extra token mint on reconnect. An explicit new
       // click is required after failure; the server caps every session at SESSION_SECONDS.
-      let supplied = false;
+      // The SDK calls the provider again when it redials (capacity queue, reconnect).
+      // Reuse this session's short-lived token while valid instead of failing; the
+      // 60 s timer still caps the session and a stopped session never gets a key.
+      const tokenExpiry = Date.parse(token.expiresAt);
       const client = sdk.createDecartClient({logger: sdk.noopLogger, telemetry: false, apiKeyProvider: async () => {
-        if (supplied || epoch !== this.epoch) throw new Error("Explicit restart required");
-        supplied = true; return token.apiKey;
+        if (epoch !== this.epoch || !(tokenExpiry - 2000 > Date.now())) throw new Error("Explicit restart required");
+        return token.apiKey;
       }});
       const options: RealTimeClientConnectOptions = {
         model: sdk.models.realtime(DECART_MODEL), mirror: true, retries: 0,
