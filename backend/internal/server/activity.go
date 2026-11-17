@@ -323,7 +323,7 @@ func (s *Server) application(w http.ResponseWriter, r *http.Request) {
 		problem(w, 429, "try again later")
 		return
 	}
-	if r.Header.Get("Origin") != s.Config.FrontendURL {
+	if !s.Config.AllowedOrigin(r.Header.Get("Origin")) {
 		problem(w, 403, "trusted origin required")
 		return
 	}

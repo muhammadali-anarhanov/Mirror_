@@ -21,14 +21,16 @@ func Load() (Config, error) {
 	if c.DatabaseURL == "" || len(c.JWTSecret) < 32 || c.FrontendURL == "" {
 		return c, errors.New("DATABASE_URL, JWT_SECRET (32+ bytes), FRONTEND_URL are required")
 	}
-	u, e := url.Parse(c.FrontendURL)
-	if e != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Path != "" || u.RawQuery != "" {
-		return c, errors.New("FRONTEND_URL must be an exact origin")
+	for _, o := range c.Origins() {
+		u, e := url.Parse(o)
+		if e != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Path != "" || u.RawQuery != "" {
+			return c, errors.New("FRONTEND_URL must be an exact origin (comma-separated list allowed)")
+		}
+		if c.Production && u.Scheme != "https" {
+			return c, errors.New("production frontend requires HTTPS")
+		}
 	}
-	if c.Production && u.Scheme != "https" {
-		return c, errors.New("production frontend requires HTTPS")
-	}
-	if e = ValidateDatabaseURL(c.DatabaseURL); e != nil {
+	if e := ValidateDatabaseURL(c.DatabaseURL); e != nil {
 		return c, e
 	}
 	d, _ := url.Parse(c.DatabaseURL)
@@ -39,7 +41,7 @@ func Load() (Config, error) {
 		return c, errors.New("configure both Supabase URL and service role key")
 	}
 	if c.SupabaseURL != "" {
-		u, e = url.Parse(c.SupabaseURL)
+		u, e := url.Parse(c.SupabaseURL)
 		if e != nil || u.Scheme != "https" || u.Host == "" {
 			return c, errors.New("Supabase URL must use HTTPS")
 		}
@@ -68,4 +70,25 @@ func ValidateDatabaseURL(raw string) error {
 		return errors.New("DATABASE_URL must be a complete postgres:// or postgresql:// URI with a host and database name (value hidden)")
 	}
 	return nil
+}
+
+// Origins returns the browser origins listed in FRONTEND_URL (comma-separated).
+func (c Config) Origins() []string {
+	var out []string
+	for _, o := range strings.Split(c.FrontendURL, ",") {
+		if o = strings.TrimRight(strings.TrimSpace(o), "/"); o != "" {
+			out = append(out, o)
+		}
+	}
+	return out
+}
+
+// AllowedOrigin reports whether origin exactly matches one configured frontend origin.
+func (c Config) AllowedOrigin(origin string) bool {
+	for _, o := range c.Origins() {
+		if origin != "" && origin == o {
+			return true
+		}
+	}
+	return false
 }

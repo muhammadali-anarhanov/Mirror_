@@ -131,9 +131,29 @@ func (s *Server) auth(next http.HandlerFunc, roles ...string) http.HandlerFunc {
 			problem(w, 403, "permission denied")
 			return
 		}
-		next(w, r.WithContext(context.WithValue(r.Context(), userKey{}, u)))
+		ctx := context.WithValue(r.Context(), userKey{}, u)
+		// The UI never sends ?tenantId=; with a single active tenant the scope is unambiguous.
+		if u.Role == "SUPER_ADMIN" && r.URL.Query().Get("tenantId") == "" && s.DB != nil {
+			var ids []string
+			if rows, e := s.DB.Query(r.Context(), "SELECT id::text FROM mirror.tenants WHERE status='ACTIVE' LIMIT 2"); e == nil {
+				for rows.Next() {
+					var id string
+					if rows.Scan(&id) == nil {
+						ids = append(ids, id)
+					}
+				}
+				rows.Close()
+			}
+			if len(ids) == 1 {
+				ctx = context.WithValue(ctx, defaultTenantKey{}, ids[0])
+			}
+		}
+		next(w, r.WithContext(ctx))
 	}
 }
+
+type defaultTenantKey struct{}
+
 func contains(a []string, v string) bool {
 	for _, x := range a {
 		if x == v {
@@ -146,6 +166,9 @@ func tenant(r *http.Request) (string, bool) {
 	u := current(r)
 	if u.Role == "SUPER_ADMIN" {
 		v := r.URL.Query().Get("tenantId")
+		if v == "" {
+			v, _ = r.Context().Value(defaultTenantKey{}).(string)
+		}
 		return v, validID(v)
 	}
 	return u.TenantID, validID(u.TenantID)
@@ -226,7 +249,7 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 			slog.Info("request", "method", r.Method, "duration_ms", time.Since(start).Milliseconds())
 		}()
 		origin := r.Header.Get("Origin")
-		if origin != "" && origin != s.Config.FrontendURL {
+		if origin != "" && !s.Config.AllowedOrigin(origin) {
 			problem(w, 403, "origin not allowed")
 			return
 		}
@@ -242,11 +265,11 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 			return
 		}
 		if r.Method != "GET" && r.Method != "HEAD" {
-			if _, e := r.Cookie("mirror_access"); e == nil && origin != s.Config.FrontendURL {
+			if _, e := r.Cookie("mirror_access"); e == nil && !s.Config.AllowedOrigin(origin) {
 				problem(w, 403, "origin required for cookie requests")
 				return
 			}
-			if _, e := r.Cookie("mirror_refresh"); e == nil && origin != s.Config.FrontendURL {
+			if _, e := r.Cookie("mirror_refresh"); e == nil && !s.Config.AllowedOrigin(origin) {
 				problem(w, 403, "origin required for cookie requests")
 				return
 			}

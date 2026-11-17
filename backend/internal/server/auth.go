@@ -82,12 +82,21 @@ func (s *Server) rateLimit(key string) bool {
 	s.attempts[key] = v
 	return v.Count <= 20
 }
+
+// limited reports whether key is locked without consuming an attempt.
+func (s *Server) limited(key string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	v, ok := s.attempts[key]
+	return ok && time.Now().Before(v.Until) && v.Count >= 20
+}
+func (s *Server) resetLimit(key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.attempts, key)
+}
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	host, _, _ := net.SplitHostPort(r.RemoteAddr)
-	if !s.rateLimit("login:" + host) {
-		problem(w, 429, "try again later")
-		return
-	}
 	var b struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -95,7 +104,15 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &b) {
 		return
 	}
+	// Requests arrive through the Next proxy, so the IP is shared by all users:
+	// key on account too and count failures only.
+	key := "login:" + host + ":" + strings.ToLower(strings.TrimSpace(b.Email))
+	if s.limited(key) {
+		problem(w, 429, "try again later")
+		return
+	}
 	if len(b.Password) > 72 {
+		s.rateLimit(key)
 		problem(w, 401, "invalid credentials")
 		return
 	}
@@ -107,9 +124,11 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	pwerr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(b.Password))
 	if e != nil || pwerr != nil {
+		s.rateLimit(key)
 		problem(w, 401, "invalid credentials")
 		return
 	}
+	s.resetLimit(key)
 	u.SessionID = uuid()
 	refresh := randomToken()
 	_, e = s.DB.Exec(r.Context(), "INSERT INTO mirror.sessions(id,user_id,refresh_hash,expires_at) VALUES($1,$2,$3,now()+interval '7 days')", u.SessionID, u.ID, hashToken(refresh))
