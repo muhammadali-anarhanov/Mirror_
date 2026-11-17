@@ -80,3 +80,32 @@ func TestDecartEndpointTokenResponseAndRateLimit(t *testing.T) {
 		t.Fatal("limited request reached provider")
 	}
 }
+
+func TestDecartTokenUsesRequestOriginFromAllowList(t *testing.T) {
+	var got []string
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var b struct {
+			AllowedOrigins []string `json:"allowedOrigins"`
+		}
+		json.NewDecoder(r.Body).Decode(&b)
+		got = b.AllowedOrigins
+		json.NewEncoder(w).Encode(map[string]any{"apiKey": "ek_fixture", "expiresAt": time.Now().Add(time.Minute).Format(time.RFC3339)})
+	}))
+	defer provider.Close()
+	s := New(nil, config.Config{DecartAPIKey: "k", DecartEnableRealtime: true, FrontendURL: "https://a.example,https://b.example"})
+	s.Decart.BaseURL = provider.URL
+	u := User{ID: "user", TenantID: "11111111-1111-4111-8111-111111111111", BranchID: "22222222-2222-4222-8222-222222222222"}
+	for origin, want := range map[string]string{"https://b.example": "https://b.example", "": "https://a.example", "https://evil.example": "https://a.example"} {
+		req := httptest.NewRequest("POST", "/api/v1/decart/token", strings.NewReader(`{"consent":true}`))
+		req.Header.Set("Content-Type", "application/json")
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		req = req.WithContext(context.WithValue(req.Context(), userKey{}, u))
+		w := httptest.NewRecorder()
+		s.decartToken(w, req)
+		if w.Code != 200 || len(got) != 1 || got[0] != want {
+			t.Fatalf("origin %q: code %d, sent %v, want [%s]", origin, w.Code, got, want)
+		}
+	}
+}

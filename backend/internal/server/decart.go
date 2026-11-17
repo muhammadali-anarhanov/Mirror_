@@ -34,7 +34,15 @@ func (s *Server) decartToken(w http.ResponseWriter, r *http.Request) {
 		problem(w, 429, "Decart session limit reached; try later")
 		return
 	}
-	token, err := s.Decart.CreateToken(r.Context(), s.Config.FrontendURL)
+	// FRONTEND_URL may list several origins; Decart needs exactly one, the caller's.
+	origin := r.Header.Get("Origin")
+	if !s.Config.AllowedOrigin(origin) {
+		origin = ""
+		if o := s.Config.Origins(); len(o) > 0 {
+			origin = o[0]
+		}
+	}
+	token, err := s.Decart.CreateToken(r.Context(), origin)
 	if err != nil {
 		var provider *decart.ProviderError
 		if errors.As(err, &provider) {
