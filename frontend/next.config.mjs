@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    // Local MVP records use the existing, explicitly named sample garments.
+    return [{ source: '/storage/v1/object/public/mvp-products/:file', destination: '/products/:file' }];
+  },
   images: {
     unoptimized: true,
   },

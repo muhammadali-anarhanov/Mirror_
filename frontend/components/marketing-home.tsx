@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useText } from "@/components/marketing-language";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -20,6 +22,8 @@ import { marketingHomeCopy } from "@/lib/marketing-home-copy";
 const featureIcons = [ScanLine, Layers3, Store] as const;
 
 export function MarketingHome() {
+  const t = useText();
+
   const { language } = useMarketingLanguage();
   const copy = marketingHomeCopy[language];
 
@@ -29,7 +33,7 @@ export function MarketingHome() {
         <div className="max-w-xl">
           <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3.5 py-2 text-xs font-medium text-muted-foreground shadow-sm">
             <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
-            {copy.hero.eyebrow}
+            {t(copy.hero.eyebrow)}
           </p>
           <h1 className="max-w-[12ch] font-sans text-[clamp(3.25rem,8vw,5.8rem)] leading-[0.96] tracking-[-0.055em]">
             {copy.hero.titleStart}
@@ -37,7 +41,7 @@ export function MarketingHome() {
             {copy.hero.titleEnd}
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            {copy.hero.description}
+            {t(copy.hero.description)}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -107,12 +111,12 @@ export function MarketingHome() {
       <section className="border-y border-border/80 bg-card/55">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{copy.features.eyebrow}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{t(copy.features.eyebrow)}</p>
             <h2 className="mt-4 font-sans text-3xl leading-tight tracking-[-0.035em] sm:text-5xl">
-              {copy.features.title}
+              {t(copy.features.title)}
             </h2>
             <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-              {copy.features.description}
+              {t(copy.features.description)}
             </p>
           </div>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -124,8 +128,8 @@ export function MarketingHome() {
                     <Icon aria-hidden="true" className="size-5" />
                   </div>
                   <p className="mt-7 text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">0{index + 1}</p>
-                  <h3 className="mt-2 font-sans text-2xl tracking-[-0.025em]">{feature.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{feature.body}</p>
+                  <h3 className="mt-2 font-sans text-2xl tracking-[-0.025em]">{t(feature.title)}</h3>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{t(feature.body)}</p>
                 </article>
               );
             })}
@@ -147,12 +151,12 @@ export function MarketingHome() {
           </div>
         </div>
         <div className="max-w-xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{copy.catalog.eyebrow}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{t(copy.catalog.eyebrow)}</p>
           <h2 className="mt-4 font-sans text-3xl leading-tight tracking-[-0.04em] sm:text-5xl">
-            {copy.catalog.title}
+            {t(copy.catalog.title)}
           </h2>
           <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-base">
-            {copy.catalog.description}
+            {t(copy.catalog.description)}
           </p>
           <ul className="mt-7 flex flex-col gap-3 text-sm text-foreground">
             {copy.catalog.bullets.map((item) => (
@@ -172,12 +176,12 @@ export function MarketingHome() {
       <section className="bg-primary text-primary-foreground">
         <div className="mx-auto grid max-w-7xl gap-8 px-5 py-14 sm:px-8 sm:py-16 md:grid-cols-[1fr_auto] md:items-center">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/75">{copy.privacy.eyebrow}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/75">{t(copy.privacy.eyebrow)}</p>
             <h2 className="mt-3 font-sans text-3xl leading-tight tracking-[-0.035em] sm:text-4xl">
-              {copy.privacy.title}
+              {t(copy.privacy.title)}
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-6 text-primary-foreground/80">
-              {copy.privacy.description}
+              {t(copy.privacy.description)}
             </p>
           </div>
           <Link
@@ -193,9 +197,9 @@ export function MarketingHome() {
       <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
         <div className="flex flex-col gap-6 rounded-[2rem] border border-border bg-card p-7 sm:p-10 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{copy.cta.eyebrow}</p>
-            <h2 className="mt-3 font-sans text-3xl tracking-[-0.035em] sm:text-4xl">{copy.cta.title}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy.cta.description}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{t(copy.cta.eyebrow)}</p>
+            <h2 className="mt-3 font-sans text-3xl tracking-[-0.035em] sm:text-4xl">{t(copy.cta.title)}</h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{t(copy.cta.description)}</p>
           </div>
           <Link className={buttonVariants({ size: "lg", className: "h-12 shrink-0 rounded-full px-6" })} href="/request-demo">
             {copy.navigation.requestDemo}

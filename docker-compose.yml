@@ -22,12 +22,11 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       APP_ENV: development
       PORT: 8080
-      FASHN_API_KEY: ${FASHN_API_KEY:-}
-      FASHN_ENABLE_PAID_REQUESTS: ${FASHN_ENABLE_PAID_REQUESTS:-false}
+      DECART_API_KEY: ${DECART_API_KEY:-}
+      DECART_ENABLE_REALTIME: ${DECART_ENABLE_REALTIME:-false}
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
       SUPABASE_PRODUCT_BUCKET: ${SUPABASE_PRODUCT_BUCKET:-product-images}
-      SUPABASE_TRYON_BUCKET: ${SUPABASE_TRYON_BUCKET:-tryon-images}
     depends_on:
       postgres:
         condition: service_healthy

@@ -55,7 +55,7 @@ func TestHTTPGuards(t *testing.T) {
 	for _, c := range []struct {
 		method, path, origin string
 		status               int
-	}{{"POST", "/api/v1/products", "", 401}, {"POST", "/api/v1/tryon-images", "", 401}, {"GET", "/api/v1/products", "https://evil.example", 403}, {"POST", "/api/v1/auth/login", "https://evil.example", 403}, {"GET", "/healthz", "", 503}} {
+	}{{"POST", "/api/v1/products", "", 401}, {"POST", "/api/v1/decart/token", "", 401}, {"GET", "/api/v1/products", "https://evil.example", 403}, {"POST", "/api/v1/auth/login", "https://evil.example", 403}, {"GET", "/healthz", "", 503}} {
 		r := httptest.NewRequest(c.method, c.path, nil)
 		r.Header.Set("Origin", c.origin)
 		w := httptest.NewRecorder()
@@ -112,6 +112,18 @@ func TestPostgresAPI(t *testing.T) {
 	var mu sync.Mutex
 	objects := map[string][]byte{}
 	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/storage/v1/object/public/") {
+			mu.Lock()
+			defer mu.Unlock()
+			data, ok := objects[strings.TrimPrefix(r.URL.Path, "/storage/v1/object/public/")]
+			if !ok {
+				w.WriteHeader(404)
+				return
+			}
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write(data)
+			return
+		}
 		if r.Header.Get("Authorization") != "Bearer test-service-key" {
 			w.WriteHeader(401)
 			return
@@ -145,7 +157,7 @@ func TestPostgresAPI(t *testing.T) {
 		}
 	}))
 	defer fake.Close()
-	s := New(db, config.Config{JWTSecret: strings.Repeat("j", 32), FrontendURL: "http://localhost:3000", SupabaseURL: fake.URL, ServiceKey: "test-service-key", ProductBucket: "product-images", TryonBucket: "tryon-images"})
+	s := New(db, config.Config{JWTSecret: strings.Repeat("j", 32), FrontendURL: "http://localhost:3000", SupabaseURL: fake.URL, ServiceKey: "test-service-key", ProductBucket: "product-images"})
 	s.Storage = storage.New(fake.URL, "test-service-key")
 	var tenantA, tenantB, branchA, branchB string
 	mustScan := func(query string, args []any, dest ...any) {
@@ -240,7 +252,8 @@ func TestPostgresAPI(t *testing.T) {
 	if _, e := db.Exec(ctx, "UPDATE mirror.subscriptions SET plan_id='starter' WHERE tenant_id=$1", tenantA); e != nil {
 		t.Fatal(e)
 	}
-	check(jreq("POST", "/api/v1/try-on", map[string]any{}, staff), 503)
+	check(jreq("POST", "/api/v1/decart/token", map[string]any{"consent": true}, staff), 503)
+	check(jreq("POST", "/api/v1/try-on", map[string]any{}, staff), 404)
 	var img bytes.Buffer
 	_ = png.Encode(&img, image.NewRGBA(image.Rect(0, 0, 4, 5)))
 	upload := func(path string, cookies []*http.Cookie, fields map[string]string, data []byte) *httptest.ResponseRecorder {
@@ -281,6 +294,32 @@ func TestPostgresAPI(t *testing.T) {
 	if !strings.Contains(w.Body.String(), im.URL) || !strings.Contains(w.Body.String(), `"inStock":true`) {
 		t.Fatal("mirror catalog contract", w.Body.String())
 	}
+	w = jreq("GET", "/api/v1/decart/garments/"+product.ID, nil, staff)
+	check(w, 200)
+	if w.Header().Get("Content-Type") != "image/png" || w.Header().Get("Cache-Control") != "private, no-store" {
+		t.Fatal("invalid garment response headers")
+	}
+	decoded, err := png.Decode(bytes.NewReader(w.Body.Bytes()))
+	if err != nil || decoded.Bounds().Dx() != 4 || decoded.Bounds().Dy() != 5 {
+		t.Fatal("selected catalog garment bytes not returned")
+	}
+	check(jreq("GET", "/api/v1/decart/garments/"+product.ID, nil, b), 404)
+	check(jreq("GET", "/api/v1/decart/garments/"+uuid(), nil, staff), 404)
+	check(jreq("GET", "/api/v1/decart/garments/"+product.ID, nil, a), 200)
+	// Fitting is independent of purchasing stock, but requires publication.
+	check(jreq("POST", "/api/v1/inventory/adjust", map[string]any{"variantId": product.Variants[0].ID, "branchId": branchA, "delta": -2}, a), 200)
+	check(jreq("GET", "/api/v1/decart/garments/"+product.ID, nil, staff), 200)
+	check(jreq("POST", "/api/v1/inventory/adjust", map[string]any{"variantId": product.Variants[0].ID, "branchId": branchA, "delta": 2}, a), 200)
+	product.Status = "Draft"
+	check(jreq("PUT", "/api/v1/products/"+product.ID, product, a), 200)
+	check(jreq("GET", "/api/v1/decart/garments/"+product.ID, nil, staff), 404)
+	w = jreq("GET", "/api/v1/products", nil, staff)
+	check(w, 200)
+	if strings.Contains(w.Body.String(), product.ID) {
+		t.Fatal("draft leaked to mirror catalog")
+	}
+	product.Status = "Published"
+	check(jreq("PUT", "/api/v1/products/"+product.ID, product, a), 200)
 	oldImage := im
 	w = upload("/api/v1/images/"+im.ID, a, map[string]string{"approved": "true"}, img.Bytes())
 	check(w, 201)
@@ -302,14 +341,16 @@ func TestPostgresAPI(t *testing.T) {
 	if exists {
 		t.Fatal("storage object not deleted")
 	}
-	check(upload("/api/v1/tryon-images", staff, map[string]string{}, img.Bytes()), 400)
-	w = upload("/api/v1/tryon-images", staff, map[string]string{"consent": "true"}, img.Bytes())
-	check(w, 201)
-	var private Image
-	_ = json.Unmarshal(w.Body.Bytes(), &private)
-	if private.Approved || private.URL != "" || private.Bucket != "tryon-images" || private.Expires == nil {
-		t.Fatal("private image exposed")
+	check(upload("/api/v1/tryon-images", staff, map[string]string{"consent": "true"}, img.Bytes()), 404)
+	// Existing private rows remain readable and cleanable after provider removal.
+	private := Image{ID: uuid(), Bucket: "tryon-images", Path: tenantA + "/legacy.png"}
+	_, e := db.Exec(ctx, `INSERT INTO mirror.images(id,tenant_id,owner_id,bucket,object_path,mime_type,size_bytes,width,height,kind,expires_at) SELECT $1,$2,id,$3,$4,'image/png',10,4,5,'tryon',now()+interval '15 minutes' FROM mirror.users WHERE email='staff@example.com'`, private.ID, tenantA, private.Bucket, private.Path)
+	if e != nil {
+		t.Fatal(e)
 	}
+	mu.Lock()
+	objects[private.Bucket+"/"+private.Path] = img.Bytes()
+	mu.Unlock()
 	check(jreq("GET", "/api/v1/images/"+private.ID, nil, a), 404)
 	check(jreq("POST", "/api/v1/images/"+private.ID+"/signed-url", nil, staff), 200)
 	if _, e := db.Exec(ctx, "UPDATE mirror.images SET expires_at=now()-interval '1 second' WHERE id=$1", private.ID); e != nil {

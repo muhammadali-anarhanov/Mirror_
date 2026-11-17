@@ -17,7 +17,7 @@ export const mirrorLanguageCodes: Record<MirrorLanguage, string> = {
   UZ: "UZ",
   EN: "EN",
   RU: "RU",
-  KK: "KZ",
+  KK: "KK",
   AR: "AR",
   TR: "TR",
 };

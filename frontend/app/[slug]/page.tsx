@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { isLanguage, translateText } from "@/lib/i18n";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MarketingArticle, MarketingLeadPage } from "@/components/marketing-pages";
@@ -7,21 +9,21 @@ import type { ApplicationType } from "@/lib/database-schema";
 const leadPages: Record<string, { applicationType: ApplicationType; title: string; description: string }> = {
   "request-demo": {
     applicationType: "DEMO",
-    title: "MIRROR’ni biznesingizda sinab ko‘ring",
+    title: "Try MIRROR in your business",
     description:
-      "Mahsulot katalogingiz, filiallar va kerakli qurilmalar haqida yozing. Jamoamiz siz bilan demo va keyingi qadamlarni kelishadi.",
+      "Tell us about your catalog, branches and devices. Our team will arrange a demo and next steps with you.",
   },
   contact: {
     applicationType: "CONTACT",
-    title: "Biz bilan bog‘laning",
+    title: "Contact us",
     description:
-      "Savolingiz, hamkorlik g‘oyangiz yoki loyiha talabi bormi? Qisqa ma’lumot qoldiring — so‘rovingizni tegishli jamoaga yo‘naltiramiz.",
+      "Have a question, partnership idea or project request? Leave a short message and we will connect you with the right team.",
   },
   partnerships: {
     applicationType: "PARTNERSHIP",
-    title: "MIRROR bilan hamkorlikni boshlang",
+    title: "Start a partnership with MIRROR",
     description:
-      "Brend, do‘kon tarmog‘i yoki texnologik hamkorlik bo‘yicha g‘oyangizni yuboring. Kerakli ma’lumotlarni ko‘rib chiqib, keyingi qadamlarni birga belgilaymiz.",
+      "Share your ideas for a brand, store network or technology partnership. We will review your information and agree on next steps together.",
   },
 };
 
@@ -30,10 +32,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const leadPage = leadPages[slug];
   const contentPage = marketingPages[slug];
   const title = leadPage?.title ?? contentPage?.title;
+  const stored = (await cookies()).get("mirror_language")?.value;
+  const language = isLanguage(stored) ? stored : "EN";
 
   return {
-    title: title ? `${title} | MIRROR` : "MIRROR — Virtual fitting & retail",
-    description: leadPage?.description ?? contentPage?.description,
+    title: title ? `${translateText(language, title)} | MIRROR` : "MIRROR — Virtual fitting & retail",
+    description: translateText(language, leadPage?.description ?? contentPage?.description ?? ""),
   };
 }
 

@@ -45,8 +45,8 @@ func (c *Client) request(ctx context.Context, method, path string, body []byte, 
 	if e != nil {
 		return nil, e
 	}
-	r.Header.Set("Authorization", "Bearer "+c.Key)
 	r.Header.Set("apikey", c.Key)
+	r.Header.Set("Authorization", "Bearer "+c.Key)
 	r.Header.Set("Content-Type", ctype)
 	resp, e := c.HTTP.Do(r)
 	if e != nil {
@@ -58,7 +58,21 @@ func (c *Client) request(ctx context.Context, method, path string, body []byte, 
 		return nil, e
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("storage returned status %d", resp.StatusCode)
+		var details struct {
+			Error   string `json:"error"`
+			Message string `json:"message"`
+		}
+
+		_ = json.Unmarshal(b, &details)
+
+		return nil, fmt.Errorf(
+			"storage %s %s: HTTP %d, error: %s, message: %s",
+			method,
+			path,
+			resp.StatusCode,
+			details.Error,
+			details.Message,
+		)
 	}
 	return b, nil
 }

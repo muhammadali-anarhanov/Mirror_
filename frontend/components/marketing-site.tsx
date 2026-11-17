@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useText } from "@/components/marketing-language";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
@@ -8,7 +10,7 @@ import { marketingLanguages, useMarketingLanguage } from "@/components/marketing
 import { marketingHomeCopy } from "@/lib/marketing-home-copy";
 
 const navigationHrefs = ["/how-it-works", "/features", "/for-brands", "/pricing", "/faq"];
-const displayLanguageCodes = { UZ: "UZ", EN: "EN", RU: "RU", KK: "KZ", AR: "AR" } as const;
+const displayLanguageCodes = { UZ: "UZ", EN: "EN", RU: "RU", KK: "KK", AR: "AR", TR: "TR" } as const;
 
 function LanguageSelect({ id, className = "" }: { id: string; className?: string }) {
   const { language, setLanguage } = useMarketingLanguage();
@@ -33,6 +35,8 @@ function LanguageSelect({ id, className = "" }: { id: string; className?: string
 }
 
 export function MarketingSiteShell({ children }: { children: ReactNode }) {
+  const t = useText();
+
   const { language } = useMarketingLanguage();
   const copy = marketingHomeCopy[language];
 
@@ -48,8 +52,8 @@ export function MarketingSiteShell({ children }: { children: ReactNode }) {
         <header className="relative z-20 border-b border-border/70 bg-background/85 backdrop-blur-xl">
           <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
             <Link className="flex shrink-0 flex-col leading-none" href="/" aria-label={copy.navigation.homeLabel}>
-              <span className="font-sans text-xl font-semibold tracking-[0.16em]">MIRROR</span>
-              <span className="mt-1 text-[9px] font-medium tracking-[0.11em] text-muted-foreground">VIRTUAL FITTING · RETAIL</span>
+              <span className="font-sans text-xl font-semibold tracking-[0.16em]">{t("MIRROR")}</span>
+              <span className="mt-1 text-[9px] font-medium tracking-[0.11em] text-muted-foreground">{t("VIRTUAL FITTING · RETAIL")}</span>
             </Link>
             <nav aria-label={copy.navigation.mainLabel} className="hidden items-center gap-6 lg:flex">
               {navigationHrefs.map((href, index) => (
@@ -120,10 +124,8 @@ export function MarketingSiteShell({ children }: { children: ReactNode }) {
         <footer className="border-t border-border/80 bg-card/70">
           <div className="mx-auto grid max-w-7xl gap-10 px-5 py-10 sm:px-8 md:grid-cols-[1fr_auto] md:items-end">
             <div className="max-w-md">
-              <Link className="font-sans text-lg font-semibold tracking-[0.16em]" href="/">
-                MIRROR
-              </Link>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy.footer.description}</p>
+              <Link className="font-sans text-lg font-semibold tracking-[0.16em]" href="/">{t("MIRROR")}</Link>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{t(copy.footer.description)}</p>
             </div>
             <nav aria-label={copy.footer.moreLabel} className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-muted-foreground">
               <Link className="hover:text-foreground" href="/about">{copy.footer.about}</Link>
@@ -133,7 +135,7 @@ export function MarketingSiteShell({ children }: { children: ReactNode }) {
               <Link className="hover:text-foreground" href="/mirror">{copy.footer.mirror}</Link>
             </nav>
             <p className="text-xs text-muted-foreground md:col-span-2">
-              © {new Date().getFullYear()} MIRROR. {copy.footer.rights}
+              © {new Date().getFullYear()}{t("MIRROR.")}{copy.footer.rights}
             </p>
           </div>
         </footer>

@@ -1,5 +1,6 @@
 "use client";
 
+import { LanguageSelector, useMarketingLanguage } from "@/components/marketing-language";
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, Menu, X } from "lucide-react";
@@ -15,10 +16,11 @@ import { portfolioProfile } from "@/lib/portfolio-profile";
 type SectionId = "about" | "skills" | "projects" | "journey" | "contact";
 
 export function PortfolioSite() {
-  const [locale, setLocale] = useState<PortfolioLocale>("kk");
+  const {language} = useMarketingLanguage();
+  const locale = language.toLowerCase() as PortfolioLocale;
   const [activeSection, setActiveSection] = useState<SectionId | "">("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const copy = portfolioContent[locale];
+  const copy = portfolioContent[locale] ?? portfolioContent.en;
   const links: { id: SectionId; label: string }[] = [
     { id: "about", label: copy.nav.about },
     { id: "skills", label: copy.nav.skills },
@@ -26,10 +28,6 @@ export function PortfolioSite() {
     { id: "journey", label: copy.nav.journey },
     { id: "contact", label: copy.nav.contact },
   ];
-
-  useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
 
   useEffect(() => {
     const sections = links.map((link) => document.getElementById(link.id)).filter((section): section is HTMLElement => section !== null);
@@ -51,7 +49,7 @@ export function PortfolioSite() {
   }
 
   return (
-    <main className="portfolio" lang={locale}>
+    <main className="portfolio" lang={locale} dir={language === "AR" ? "rtl" : "ltr"}>
       <header className="portfolio-header">
         <div className="portfolio-header-inner portfolio-container">
           <a className="portfolio-brand" href="#top" aria-label={`${portfolioProfile.name} — ${copy.footer.top}`} onClick={closeMenu}>
@@ -70,9 +68,7 @@ export function PortfolioSite() {
 
           <div className="portfolio-header-actions">
             <label className="sr-only" htmlFor="portfolio-language">{copy.nav.language}</label>
-            <select id="portfolio-language" className="portfolio-language-select" value={locale} onChange={(event) => setLocale(event.target.value as PortfolioLocale)}>
-              {portfolioLocales.map((option) => <option value={option.code} key={option.code}>{option.label}</option>)}
-            </select>
+            <LanguageSelector className="portfolio-language-select" />
             <a className="portfolio-header-cta" href="#contact">{copy.nav.connect}<ArrowUpRight aria-hidden="true" /></a>
             <button
               className="portfolio-menu-toggle"

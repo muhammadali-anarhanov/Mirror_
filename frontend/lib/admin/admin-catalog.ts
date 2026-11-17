@@ -13,19 +13,14 @@ const extendedDefinitions: Record<string, SectionDefinition> = {
     fields: [
       { key: "name", label: "Product name", required: true }, { key: "description", label: "Description", multiline: true },
       { key: "category", label: "Category", options: ["Tops", "Dresses", "Footwear", "Accessories", "Pants"] , required: true },
-      { key: "collection", label: "Collection" }, { key: "price", label: "Current selling price", type: "number", required: true },
+      { key: "price", label: "Current selling price", type: "number", required: true },
       { key: "oldPrice", label: "Optional old / promotional price", type: "number" }, { key: "sku", label: "SKU", required: true },
-      { key: "barcode", label: "Barcode" }, { key: "variants", label: "Variants (one per line: size · color · SKU · stock)", multiline: true, required: true },
-      { key: "branch", label: "Branch assignment", options: ["All branches", "Le Marais", "Saint-Germain", "Lyon Presqu’île", "Nice Carré d’Or"] },
-      { key: "aiStatus", label: "AI try-on image status", options: ["Ready", "Needs image", "Processing"] },
-      { key: "stock", label: "Available units", type: "number", required: true },
+      { key: "barcode", label: "Barcode" }, { key: "variants", label: "Variants (one per line: size · color · SKU)", multiline: true, required: true },
       { key: "status", label: "Status", options: ["Published", "Draft", "Archived", "Blocked"] },
     ],
     filters: [
       { key: "category", label: "All categories", options: ["Tops", "Dresses", "Footwear", "Accessories", "Pants"] },
-      { key: "collection", label: "All collections", options: ["Autumn 2026", "Core essentials", "Studio edit"] },
       { key: "status", label: "All statuses", options: ["Published", "Draft", "Archived", "Blocked"] },
-      { key: "branch", label: "All branches", options: ["All branches", "Le Marais", "Saint-Germain", "Lyon Presqu’île", "Nice Carré d’Or"] },
     ],
   },
   inventory: {

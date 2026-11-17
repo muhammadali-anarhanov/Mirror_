@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useText } from "@/components/marketing-language";
 import { useState, type FormEvent } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import type { ApplicationType } from "@/lib/database-schema";
 
 export function ApplicationForm({ applicationType }: { applicationType: ApplicationType }) {
+  const t = useText();
+
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -51,59 +55,59 @@ export function ApplicationForm({ applicationType }: { applicationType: Applicat
   return (
     <form className="marketing-form" onSubmit={handleSubmit}>
       <div className="mb-6">
-        <h2 className="font-sans text-2xl tracking-[-0.025em] sm:text-3xl">{"So‘rov ma’lumotlari"}</h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{"Maydonlarni to‘ldiring — jamoamiz siz bilan bog‘lanadi."}</p>
+        <h2 className="font-sans text-2xl tracking-[-0.025em] sm:text-3xl">{t("Request details")}</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("Fill in the fields and our team will contact you.")}</p>
       </div>
       <FieldGroup className="gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor="companyName">Tashkilot nomi</FieldLabel>
-            <Input id="companyName" name="companyName" autoComplete="organization" minLength={2} maxLength={120} placeholder="Masalan, MIRROR Retail" required />
+            <FieldLabel htmlFor="companyName">{t("Company name")}</FieldLabel>
+            <Input id="companyName" name="companyName" autoComplete="organization" minLength={2} maxLength={120} placeholder={t("For example, MIRROR Retail")} required />
           </Field>
           <Field>
-            <FieldLabel htmlFor="contactName">Ism-familiya</FieldLabel>
-            <Input id="contactName" name="contactName" autoComplete="name" minLength={2} maxLength={120} placeholder="Ismingiz" required />
+            <FieldLabel htmlFor="contactName">{t("Full name")}</FieldLabel>
+            <Input id="contactName" name="contactName" autoComplete="name" minLength={2} maxLength={120} placeholder={t("Your name")} required />
           </Field>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor="email">Ish elektron pochtasi</FieldLabel>
-            <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="name@company.com" required />
+            <FieldLabel htmlFor="email">{t("Work email")}</FieldLabel>
+            <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} placeholder={t("name@company.com")} required />
           </Field>
           <Field>
-            <FieldLabel htmlFor="phone">Telefon raqami</FieldLabel>
+            <FieldLabel htmlFor="phone">{t("Phone number")}</FieldLabel>
             <Input id="phone" name="phone" type="tel" autoComplete="tel" maxLength={40} placeholder="+998 ..." />
           </Field>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor="country">Mamlakat</FieldLabel>
-            <Input id="country" name="country" autoComplete="country-name" maxLength={80} placeholder="O‘zbekiston" />
+            <FieldLabel htmlFor="country">{t("Country")}</FieldLabel>
+            <Input id="country" name="country" autoComplete="country-name" maxLength={80} placeholder={t("Uzbekistan")} />
           </Field>
           <Field>
-            <FieldLabel htmlFor="requestedBranches">Filiallar soni</FieldLabel>
-            <Input id="requestedBranches" name="requestedBranches" type="number" min={1} max={10000} step={1} inputMode="numeric" placeholder="Masalan, 5" />
+            <FieldLabel htmlFor="requestedBranches">{t("Number of branches")}</FieldLabel>
+            <Input id="requestedBranches" name="requestedBranches" type="number" min={1} max={10000} step={1} inputMode="numeric" placeholder={t("For example, 5")} />
           </Field>
         </div>
         <Field>
-          <FieldLabel htmlFor="website">Tashkilot veb-sayti</FieldLabel>
-          <Input id="website" name="website" type="url" autoComplete="url" maxLength={500} placeholder="https://example.com" />
-          <FieldDescription>Ixtiyoriy. Havolani https:// bilan kiriting.</FieldDescription>
+          <FieldLabel htmlFor="website">{t("Website")}</FieldLabel>
+          <Input id="website" name="website" type="url" autoComplete="url" maxLength={500} placeholder={t("https://example.com")} />
+          <FieldDescription>{t("Optional. Use a link starting with https://.")}</FieldDescription>
         </Field>
         <Field>
-          <FieldLabel htmlFor="message">Sizga qanday yordam bera olamiz?</FieldLabel>
+          <FieldLabel htmlFor="message">{t("How can we help you?")}</FieldLabel>
           <textarea
             className="min-h-32 w-full resize-y rounded-2xl border border-input bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
             id="message"
             name="message"
             maxLength={2000}
-            placeholder="Katalog, filiallar yoki rejalashtirayotgan tajribangiz haqida yozing."
+            placeholder={t("Tell us about your catalog, branches or planned experience.")}
           />
         </Field>
       </FieldGroup>
 
       <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
-        <label htmlFor="fax">Fax</label>
+        <label htmlFor="fax">{t("Fax")}</label>
         <input id="fax" name="fax" tabIndex={-1} autoComplete="off" />
       </div>
 
@@ -116,36 +120,34 @@ export function ApplicationForm({ applicationType }: { applicationType: Applicat
           type="checkbox"
         />
         <FieldLabel className="text-xs leading-5 text-muted-foreground" htmlFor="consent">
-          {"MIRROR so‘rovimga javob berishi uchun yuborgan ma’lumotlarimdan foydalanishiga roziman."}
+          {t("I agree that MIRROR may use my submitted information to respond to my request.")}
         </FieldLabel>
       </Field>
 
       {status === "success" && (
         <p className="mt-5 rounded-2xl border border-primary/20 bg-accent px-4 py-3 text-sm leading-6 text-foreground" role="status" aria-live="polite">
-          {"So‘rovingiz qabul qilindi. MIRROR jamoasi siz bilan bog‘lanadi."}
+          {t("Your request was received. The MIRROR team will contact you.")}
         </p>
       )}
       {status === "error" && (
         <p className="mt-5 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm leading-6 text-destructive" role="alert">
-          {"So‘rov yuborilmadi. Iltimos, birozdan so‘ng qayta urinib ko‘ring."}
+          {t("Your request could not be sent. Please try again later.")}
         </p>
       )}
 
       <Button className="mt-6 h-12 w-full rounded-full" disabled={status === "submitting"} size="lg" type="submit">
         {status === "submitting" ? (
           <>
-            <LoaderCircle aria-hidden="true" className="animate-spin" data-icon="inline-start" />
-            Yuborilmoqda
-          </>
+            <LoaderCircle aria-hidden="true" className="animate-spin" data-icon="inline-start" />{t("Sending")}</>
         ) : (
           <>
-            {"So‘rovni yuborish"}
+            {t("Send request")}
             <ArrowRight aria-hidden="true" data-icon="inline-end" />
           </>
         )}
       </Button>
       <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
-        {"Ushbu shakl faqat demo, hamkorlik yoki aloqa so‘rovini yuborish uchun ishlatiladi."}
+        {t("This form is only for demo, partnership or contact requests.")}
       </p>
     </form>
   );

@@ -6,12 +6,6 @@ acceptance test was completed.
 
 ## Phase 1 — Frontend audit
 
-Created `docs/frontend-backend-integration.md`. Inspected routes, admin definitions,
-forms, roles, demo records, authentication, application persistence, mirror camera,
-cart/checkout payloads, MediaPipe and localization. No frontend styling or pages were
-replaced. Found no AI/payment provider. Existing demo modules remain available.
-Validation: source inspection; original package scripts contain no frontend test runner.
-
 ## Phase 2 — Foundation, database, containers
 
 Created `backend/go.mod`, `go.sum`, `cmd/api/main.go`, `internal/config`,

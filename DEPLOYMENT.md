@@ -94,7 +94,7 @@ or reduce the upload limit. Do not bypass the Go upload validation with privileg
 This is an incremental backend MVP, not a completed production rollout. Authentication,
 catalog/inventory, storage, subscription entitlement primitives and real activity APIs
 exist. Mirror camera/cart layout and demo functionality are preserved. The live product
-editor is opt-in via NEXT_PUBLIC_ENABLE_LIVE_CATALOG=true; the production catalog page
+editor is connected by default; the production catalog page
 requires a server-verified BRAND_ADMIN session. Other production admin preview gates remain. Other
 admin dashboards/workflows still display explicitly marked sample data and require API
 adapters and server-verified page authorization before being opened in production.

@@ -17,12 +17,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"mirror/backend/internal/config"
-	"mirror/backend/internal/fashn"
+	"mirror/backend/internal/decart"
 	"mirror/backend/internal/storage"
 )
 
 type Server struct {
-	Fashn    fashn.Provider
+	Decart   *decart.Client
 	DB       *pgxpool.Pool
 	Config   config.Config
 	Storage  *storage.Client
@@ -46,7 +46,7 @@ type userKey struct{}
 
 func current(r *http.Request) User { return r.Context().Value(userKey{}).(User) }
 func New(db *pgxpool.Pool, c config.Config) *Server {
-	return &Server{Fashn: fashn.New(c.FashnAPIKey, c.FashnPaidRequests), DB: db, Config: c, Storage: storage.New(c.SupabaseURL, c.ServiceKey), attempts: make(map[string]attempt)}
+	return &Server{Decart: decart.New(c.DecartAPIKey), DB: db, Config: c, Storage: storage.New(c.SupabaseURL, c.ServiceKey), attempts: make(map[string]attempt)}
 }
 func uuid() string {
 	b := make([]byte, 16)
@@ -181,7 +181,6 @@ func (s *Server) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/images/{id}", s.auth(s.image))
 	m.HandleFunc("DELETE /api/v1/images/{id}", s.auth(s.deleteImage, "SUPER_ADMIN", "BRAND_ADMIN", "STORE_ADMIN", "STAFF"))
 	m.HandleFunc("POST /api/v1/images/{id}/signed-url", s.auth(s.signImage))
-	m.HandleFunc("POST /api/v1/tryon-images", s.auth(s.uploadImage))
 	m.HandleFunc("GET /api/v1/brands", s.auth(s.brands, "SUPER_ADMIN", "BRAND_ADMIN"))
 	m.HandleFunc("POST /api/v1/brands", s.auth(s.createBrand, "SUPER_ADMIN"))
 	m.HandleFunc("PATCH /api/v1/brands/{id}", s.auth(s.updateBrand, "SUPER_ADMIN"))
@@ -202,9 +201,8 @@ func (s *Server) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/subscription", s.auth(s.subscription, "SUPER_ADMIN", "BRAND_ADMIN"))
 	m.HandleFunc("PUT /api/v1/subscription", s.auth(s.changePlan, "SUPER_ADMIN", "BRAND_ADMIN"))
 	m.HandleFunc("POST /api/v1/credits", s.auth(s.addCredits, "SUPER_ADMIN"))
-	m.HandleFunc("POST /api/v1/try-on", s.auth(s.tryon))
-	m.HandleFunc("GET /api/v1/try-on/{id}", s.auth(s.tryonStatus))
-	m.HandleFunc("GET /api/v1/try-on", s.auth(s.tryonLookup))
+	m.HandleFunc("POST /api/v1/decart/token", s.auth(s.decartToken))
+	m.HandleFunc("GET /api/v1/decart/garments/{id}", s.auth(s.decartGarment))
 	m.HandleFunc("POST /api/v1/cart", s.auth(s.cart))
 	m.HandleFunc("POST /api/v1/orders/checkout", s.auth(s.checkout))
 	m.HandleFunc("GET /api/v1/orders", s.auth(s.orders))

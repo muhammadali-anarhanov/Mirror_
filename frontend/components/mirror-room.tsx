@@ -1,7 +1,8 @@
 "use client";
 
+
+import { useText } from "@/components/marketing-language";
 import {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -21,7 +22,6 @@ import {
   LoaderCircle,
   Minus,
   Plus,
-  RotateCcw,
   Shirt,
   ShoppingBag,
   ShoppingCart,
@@ -29,12 +29,9 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import PersonCutoutCamera from "./person-cutout-camera";
-import PoseGarmentOverlay from "./pose-garment-overlay";
-import { DEMO_AR_SHIRTS, type ARShirt } from "@/lib/pose-overlay";
+import { useMarketingLanguage } from "./marketing-language";
 import {
   mirrorColorTranslations,
-  mirrorDemoProductNames,
   mirrorInterfaceCopy,
   mirrorLanguageCodes,
   mirrorLanguageLocale,
@@ -44,6 +41,8 @@ import {
   type MirrorLanguage,
 } from "@/lib/mirror-locale";
 
+import { mirrorCopy as copy } from "@/lib/translations/mirror";
+import { localizedProductName } from "@/lib/catalog-locale";
 import { apiFetch, apiURL } from "@/lib/api";
 
 type Category = MirrorCategory;
@@ -59,6 +58,7 @@ type ProductVariant = {
 type Product = {
   id: string;
   name: string;
+  nameTranslations?: Partial<Record<Language, string>>;
   price: number;
   originalPrice?: number;
   image: string;
@@ -76,292 +76,10 @@ type CartItem = Product & {
 const categories: Category[] = ["Full Body", "Top Body", "Head", "Pants", "Footwear"];
 const languages = mirrorLanguages;
 
-const makeDemoProduct = (
-  id: string,
-  name: string,
-  price: number,
-  image: string,
-  sizes: string[],
-  color: string,
-): Product => ({
-  id,
-  name,
-  price,
-  image,
-  demo: true,
-  variants: sizes.map((size) => ({
-    id: `${id}-${size.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    size,
-    color,
-    inStock: true,
-  })),
-});
-
-const demoProductsByCategory: Record<Category, Product[]> = {
-  "Full Body": [
-    makeDemoProduct("demo-cream-set", "Cream Knit & Trouser Set", 189, "/products/demo-full-body-cream.png", ["S", "M", "L"], "Cream"),
-    makeDemoProduct("demo-navy-set", "Navy City Outfit", 205, "/products/demo-full-body-navy.png", ["S", "M", "L"], "Navy"),
-  ],
-  "Top Body": [
-    makeDemoProduct("demo-ivory-sweatshirt", "Ivory Knit Sweatshirt", 89, "/products/demo-top-sweater.png", ["S", "M", "L"], "Ivory"),
-    makeDemoProduct("demo-blue-oxford", "Pale Blue Oxford Shirt", 78, "/products/demo-top-shirt.png", ["S", "M", "L"], "Sky blue"),
-    makeDemoProduct("demo-olive-overshirt", "Olive Cotton Overshirt", 96, "/products/demo-top-overshirt.png", ["S", "M", "L"], "Olive"),
-  ],
-  Head: [
-    makeDemoProduct("demo-black-cap", "Classic Black Cap", 32, "/products/demo-head-cap.png", ["One size"], "Black"),
-    makeDemoProduct("demo-camel-beanie", "Camel Knit Beanie", 38, "/products/demo-head-beanie.png", ["One size"], "Camel"),
-  ],
-  Pants: [
-    makeDemoProduct("demo-charcoal-trousers", "Charcoal Tailored Trousers", 94, "/products/demo-pants-trousers.png", ["30", "32", "34"], "Charcoal"),
-    makeDemoProduct("demo-indigo-denim", "Indigo Straight Jeans", 82, "/products/demo-pants-denim.png", ["30", "32", "34"], "Indigo"),
-  ],
-  Footwear: [
-    makeDemoProduct("demo-white-sneakers", "Minimal White Sneakers", 110, "/products/demo-footwear-sneaker.png", ["40", "41", "42"], "White"),
-    makeDemoProduct("demo-leather-loafers", "Leather Penny Loafers", 138, "/products/demo-footwear-loafer.png", ["40", "41", "42"], "Chestnut"),
-  ],
-};
-
-const copy = {
-  UZ: {
-    clothing: "Kiyimlar",
-    cart: "Savatcha",
-    tryOn: "Virtual kiyib ko‘rish",
-    addToCart: "Savatchaga qo‘shish",
-    checkout: "Kassaga yuborish",
-    startCamera: "Kamerani yoqish",
-    cameraStop: "Kamerani o‘chirish",
-    cameraLive: "Kamera yoqilgan",
-    cameraConnecting: "Kamera ulanmoqda…",
-    cameraSecureError: "Kamerani ishlatish uchun sahifani HTTPS yoki localhost orqali oching.",
-    cameraUnavailableError: "Bu brauzerda kamera mavjud emas.",
-    cameraBlockedError: "Brauzer kameraga ruxsat bermadi. Sozlamalardan ruxsat bering yoki sahifani alohida oynada oching.",
-    cameraNotFoundError: "Kamera topilmadi. Qurilma ulanganini tekshiring.",
-    cameraBusyError: "Kamera boshqa ilovada band. Uni yoping va qayta urinib ko‘ring.",
-    cameraGenericError: "Kamera ishga tushmadi. Qayta urinib ko‘ring.",
-    cameraDisconnectedError: "Kamera uzildi. Uni qayta yoqing.",
-    cameraPrompt: "Kameraga ruxsat bering — jonli tasvir butun ekran fonida ko‘rsatiladi.",
-    backgroundRemoving: "Fon olib tashlanmoqda…",
-    backgroundRemovalError: "Fon ajratilmadi — kamera tasviri asl holida ko‘rsatilmoqda.",
-    cameraOff: "Kamera yoqilmagan",
-    edit: "Tanlash",
-    size: "O‘lcham",
-    color: "Rang",
-    emptyCart: "Savatcha hozircha bo‘sh",
-    loading: "Katalog yuklanmoqda",
-    catalogError: "Katalogni yuklab bo‘lmadi.",
-    noProducts: "Bu kategoriyada hozircha mahsulot yo‘q.",
-    demoCatalog: "Demo katalogi — namunaviy mahsulotlar. Savat va kiyib ko‘rish o‘chirilgan.",
-    cartCount: "ta mahsulot",
-    customer: "Mijoz profili",
-    backToCamera: "Kameraga qaytish",
-    cameraMustStart: "Avval kamerani yoqing.",
-    tryOnFailed: "Virtual kiyib ko‘rish amalga oshmadi. Qayta urinib ko‘ring.",
-    cartAdded: "Mahsulot savatchaga qo‘shildi.",
-    cartSyncFailed: "Savatchani server bilan sinxronlab bo‘lmadi. Mahsulot shu oynada saqlandi.",
-    orderSent: "Buyurtma kassaga yuborildi.",
-    checkoutFailed: "Buyurtmani kassaga yuborib bo‘lmadi. Qayta urinib ko‘ring.",
-  },
-  EN: {
-    clothing: "Clothing",
-    cart: "Shopping cart",
-    tryOn: "Virtual try on",
-    addToCart: "Add to cart",
-    checkout: "Send to cashier",
-    startCamera: "Start camera",
-    cameraStop: "Turn camera off",
-    cameraLive: "Camera on",
-    cameraConnecting: "Connecting camera…",
-    cameraSecureError: "Open this page over HTTPS or localhost to use the camera.",
-    cameraUnavailableError: "Camera access is not available in this browser.",
-    cameraBlockedError: "Camera access was blocked. Allow it in browser settings or open the page in a separate tab.",
-    cameraNotFoundError: "No camera was found. Check that a camera is connected.",
-    cameraBusyError: "The camera is in use by another app. Close it and try again.",
-    cameraGenericError: "The camera could not start. Please try again.",
-    cameraDisconnectedError: "The camera disconnected. Turn it on again.",
-    cameraPrompt: "Allow camera access to show the live video across the full screen.",
-    backgroundRemoving: "Removing the background…",
-    backgroundRemovalError: "Background removal failed; showing the live camera feed.",
-    cameraOff: "Camera is off",
-    edit: "Edit",
-    size: "Size",
-    color: "Color",
-    emptyCart: "Your cart is empty",
-    loading: "Loading catalog",
-    catalogError: "Could not load the catalog.",
-    noProducts: "No products in this category yet.",
-    demoCatalog: "Demo catalog — sample items. Cart and try-on are disabled.",
-    cartCount: "items",
-    customer: "Customer profile",
-    backToCamera: "Back to camera",
-    cameraMustStart: "Turn on the camera first.",
-    tryOnFailed: "Virtual try-on failed. Please try again.",
-    cartAdded: "Product added to your cart.",
-    cartSyncFailed: "Your cart could not sync with the server. The product is saved in this session.",
-    orderSent: "Your order was sent to the cashier.",
-    checkoutFailed: "Your order could not be sent. Please try again.",
-  },
-  RU: {
-    clothing: "Одежда",
-    cart: "Корзина",
-    tryOn: "Виртуальная примерка",
-    addToCart: "В корзину",
-    checkout: "Отправить кассиру",
-    startCamera: "Включить камеру",
-    cameraStop: "Выключить камеру",
-    cameraLive: "Камера включена",
-    cameraConnecting: "Подключаем камеру…",
-    cameraSecureError: "Откройте страницу по HTTPS или localhost, чтобы использовать камеру.",
-    cameraUnavailableError: "Камера недоступна в этом браузере.",
-    cameraBlockedError: "Браузер заблокировал камеру. Разрешите доступ или откройте страницу в отдельной вкладке.",
-    cameraNotFoundError: "Камера не найдена. Проверьте подключение устройства.",
-    cameraBusyError: "Камера занята другим приложением. Закройте его и попробуйте снова.",
-    cameraGenericError: "Не удалось включить камеру. Попробуйте ещё раз.",
-    cameraDisconnectedError: "Камера отключилась. Включите её снова.",
-    cameraPrompt: "Разрешите доступ к камере, чтобы показать видео на весь экран.",
-    backgroundRemoving: "Удаляем фон…",
-    backgroundRemovalError: "Фон не удалён — показываем исходное изображение с камеры.",
-    cameraOff: "Камера выключена",
-    edit: "Изменить",
-    size: "Размер",
-    color: "Цвет",
-    emptyCart: "Корзина пока пуста",
-    loading: "Загрузка каталога",
-    catalogError: "Не удалось загрузить каталог.",
-    noProducts: "В этой категории пока нет товаров.",
-    demoCatalog: "Демо-каталог — образцы. Корзина и примерка отключены.",
-    cartCount: "товаров",
-    customer: "Профиль клиента",
-    backToCamera: "Вернуться к камере",
-    cameraMustStart: "Сначала включите камеру.",
-    tryOnFailed: "Не удалось выполнить виртуальную примерку. Попробуйте ещё раз.",
-    cartAdded: "Товар добавлен в корзину.",
-    cartSyncFailed: "Не удалось синхронизировать корзину с сервером. Товар сохранён в этой сессии.",
-    orderSent: "Заказ отправлен кассиру.",
-    checkoutFailed: "Не удалось отправить заказ. Попробуйте ещё раз.",
-  },
-  KK: {
-    clothing: "Киімдер",
-    cart: "Себет",
-    tryOn: "Виртуалды киіп көру",
-    addToCart: "Себетке қосу",
-    checkout: "Кассирге жіберу",
-    startCamera: "Камераны қосу",
-    cameraStop: "Камераны өшіру",
-    cameraLive: "Камера қосулы",
-    cameraConnecting: "Камера қосылуда…",
-    cameraSecureError: "Камераны пайдалану үшін бетті HTTPS немесе localhost арқылы ашыңыз.",
-    cameraUnavailableError: "Бұл браузерде камера қолжетімді емес.",
-    cameraBlockedError: "Браузер камераға рұқсат бермеді. Баптаулардан рұқсат беріңіз немесе бетті бөлек қойындыда ашыңыз.",
-    cameraNotFoundError: "Камера құрылғысы табылмады.",
-    cameraBusyError: "Камера басқа қолданбада. Оны жауып, қайта көріңіз.",
-    cameraGenericError: "Камераны қосу мүмкін болмады. Қайта көріңіз.",
-    cameraDisconnectedError: "Камера ажыратылды. Қайта қосыңыз.",
-    cameraPrompt: "Камераға рұқсат беріңіз — тірі бейне толық экранда көрсетіледі.",
-    backgroundRemoving: "Фон алынып жатыр…",
-    backgroundRemovalError: "Фон алынбады — камераның бастапқы көрінісі көрсетіліп тұр.",
-    cameraOff: "Камера өшірулі",
-    edit: "Өзгерту",
-    size: "Өлшем",
-    color: "Түс",
-    emptyCart: "Себет әзірге бос",
-    loading: "Каталог жүктелуде",
-    catalogError: "Каталогты жүктеу мүмкін болмады.",
-    noProducts: "Бұл санатта әзірге тауар жоқ.",
-    demoCatalog: "Демо каталогы — үлгілер. Себет пен киіп көру өшірілген.",
-    cartCount: "тауар",
-    customer: "Клиент профилі",
-    backToCamera: "Камераға оралу",
-    cameraMustStart: "Алдымен камераны қосыңыз.",
-    tryOnFailed: "Виртуалды киіп көру сәтсіз аяқталды. Қайталап көріңіз.",
-    cartAdded: "Тауар себетке қосылды.",
-    cartSyncFailed: "Себетті сервермен синхрондау мүмкін болмады. Тауар осы сеанста сақталды.",
-    orderSent: "Тапсырыс кассирге жіберілді.",
-    checkoutFailed: "Тапсырысты жіберу мүмкін болмады. Қайталап көріңіз.",
-  },
-  AR: {
-    clothing: "الملابس",
-    cart: "سلة التسوق",
-    tryOn: "تجربة افتراضية",
-    addToCart: "أضف إلى السلة",
-    checkout: "إرسال إلى أمين الصندوق",
-    startCamera: "تشغيل الكاميرا",
-    cameraStop: "إيقاف الكاميرا",
-    cameraLive: "الكاميرا تعمل",
-    cameraConnecting: "جارٍ توصيل الكاميرا…",
-    cameraSecureError: "افتح الصفحة عبر HTTPS أو localhost لاستخدام الكاميرا.",
-    cameraUnavailableError: "الكاميرا غير متاحة في هذا المتصفح.",
-    cameraBlockedError: "حظر المتصفح الوصول إلى الكاميرا. اسمح بالوصول أو افتح الصفحة في علامة تبويب مستقلة.",
-    cameraNotFoundError: "لم يتم العثور على كاميرا. تحقق من توصيل الجهاز.",
-    cameraBusyError: "الكاميرا قيد الاستخدام في تطبيق آخر. أغلقه وحاول مجددًا.",
-    cameraGenericError: "تعذر تشغيل الكاميرا. حاول مرة أخرى.",
-    cameraDisconnectedError: "انقطع اتصال الكاميرا. أعد تشغيلها.",
-    cameraPrompt: "اسمح بالوصول إلى الكاميرا لعرض البث المباشر على كامل الشاشة.",
-    backgroundRemoving: "جارٍ إزالة الخلفية…",
-    backgroundRemovalError: "تعذرت إزالة الخلفية — يتم عرض بث الكاميرا كما هو.",
-    cameraOff: "الكاميرا متوقفة",
-    edit: "تعديل",
-    size: "المقاس",
-    color: "اللون",
-    emptyCart: "سلتك فارغة",
-    loading: "جارٍ تحميل الكتالوج",
-    catalogError: "تعذر تحميل الكتالوج.",
-    noProducts: "لا توجد منتجات في هذه الفئة بعد.",
-    demoCatalog: "كتالوج تجريبي — منتجات نموذجية. السلة والتجربة معطلتان.",
-    cartCount: "منتجات",
-    customer: "ملف العميل",
-    backToCamera: "العودة إلى الكاميرا",
-    cameraMustStart: "شغّل الكاميرا أولاً.",
-    tryOnFailed: "تعذرت التجربة الافتراضية. حاول مرة أخرى.",
-    cartAdded: "تمت إضافة المنتج إلى السلة.",
-    cartSyncFailed: "تعذرت مزامنة السلة مع الخادم. تم حفظ المنتج في هذه الجلسة.",
-    orderSent: "تم إرسال الطلب إلى أمين الصندوق.",
-    checkoutFailed: "تعذر إرسال الطلب. حاول مرة أخرى.",
-  },
-  TR: {
-    clothing: "Giyim",
-    cart: "Sepet",
-    tryOn: "Sanal deneme",
-    addToCart: "Sepete ekle",
-    checkout: "Kasiyere gönder",
-    startCamera: "Kamerayı aç",
-    cameraStop: "Kamerayı kapat",
-    cameraLive: "Kamera açık",
-    cameraConnecting: "Kamera bağlanıyor…",
-    cameraSecureError: "Kamerayı kullanmak için bu sayfayı HTTPS veya localhost üzerinden açın.",
-    cameraUnavailableError: "Bu tarayıcıda kamera kullanılamıyor.",
-    cameraBlockedError: "Tarayıcı kamera erişimini engelledi. Ayarlardan izin verin veya sayfayı ayrı bir sekmede açın.",
-    cameraNotFoundError: "Kamera bulunamadı. Cihaz bağlantısını kontrol edin.",
-    cameraBusyError: "Kamera başka bir uygulama tarafından kullanılıyor. Uygulamayı kapatıp tekrar deneyin.",
-    cameraGenericError: "Kamera başlatılamadı. Lütfen tekrar deneyin.",
-    cameraDisconnectedError: "Kamera bağlantısı kesildi. Yeniden açın.",
-    cameraPrompt: "Kamera erişimine izin verin; canlı görüntü tam ekranda gösterilir.",
-    backgroundRemoving: "Arka plan kaldırılıyor…",
-    backgroundRemovalError: "Arka plan kaldırılamadı; canlı kamera görüntüsü gösteriliyor.",
-    cameraOff: "Kamera kapalı",
-    edit: "Düzenle",
-    size: "Beden",
-    color: "Renk",
-    emptyCart: "Sepetiniz boş",
-    loading: "Katalog yükleniyor",
-    catalogError: "Katalog yüklenemedi.",
-    noProducts: "Bu kategoride henüz ürün yok.",
-    demoCatalog: "Demo kataloğu — örnek ürünler. Sepet ve sanal deneme devre dışı.",
-    cartCount: "ürün",
-    customer: "Müşteri profili",
-    backToCamera: "Kameraya dön",
-    cameraMustStart: "Önce kamerayı açın.",
-    tryOnFailed: "Sanal deneme başarısız oldu. Lütfen tekrar deneyin.",
-    cartAdded: "Ürün sepetinize eklendi.",
-    cartSyncFailed: "Sepet sunucuyla eşitlenemedi. Ürün bu oturumda kaydedildi.",
-    orderSent: "Sipariş kasiyere gönderildi.",
-    checkoutFailed: "Sipariş gönderilemedi. Lütfen tekrar deneyin.",
-  },
-} satisfies Record<Language, Record<string, string>>;
 
 type MirrorCopyKey = keyof typeof copy.UZ;
 
-const getProductName = (product: Product, language: Language) =>
-  mirrorDemoProductNames[product.id]?.[language] ?? product.name;
+const getProductName = localizedProductName;
 
 const getColorName = (color: string, language: Language) =>
   mirrorColorTranslations[language][color] ?? color;
@@ -380,38 +98,15 @@ const fetchProducts = async (url: string): Promise<Product[]> => {
   return data as Product[];
 };
 
-type TryonJob = { submitted?: boolean; id?: string; status?: string; error?: string; result_image_url?: string };
-async function waitForTryon(job: TryonJob, cancelled: () => boolean): Promise<TryonJob | null> {
-  const deadline = Date.now() + 12 * 60 * 1000;
-  while (job.status === "PENDING") {
-    if (job.error === "SUBMISSION_UNKNOWN" || job.error === "SUBMITTING") throw new Error("Submission could not be confirmed. Do not retry generation; ask an administrator to reconcile this session.");
-    if (Date.now() > deadline) throw new Error("Generation is still pending. Check the previous try-on later; do not submit again.");
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    if (cancelled()) return null;
-    const response = await apiFetch(`/try-on/${job.id}`);
-    const next = await response.json().catch(() => null) as TryonJob | null;
-    if (!response.ok || !next) {
-      if ([404, 410].includes(response.status)) { sessionStorage.removeItem("mirror_tryon_job"); sessionStorage.removeItem("mirror_tryon_request"); }
-      throw new Error(next?.error || "Could not check generation status. Check the previous try-on before submitting again.");
-    }
-    job = next;
-  }
-  sessionStorage.removeItem("mirror_tryon_job"); sessionStorage.removeItem("mirror_tryon_request");
-  if (job.status !== "SUCCEEDED" || !job.result_image_url) throw new Error(job.error || "AI generation failed.");
-  return job;
-}
-
 const money = (amount: number, language: Language) =>
-  new Intl.NumberFormat(mirrorLanguageLocale[language], {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount);
+  new Intl.NumberFormat(mirrorLanguageLocale[language], { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
 
 function GarmentImage({ src, name, className }: { src: string; name: string; className?: string }) {
+  const t = useText();
+
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [src]);
-  if (!src || failed) return <span className="mirror-image-unavailable" role="status">Garment image unavailable</span>;
+  if (!src || failed) return <span className="mirror-image-unavailable" role="status">{t("Garment image unavailable")}</span>;
   return <img src={src} alt={name} className={className} onError={() => setFailed(true)} />;
 }
 
@@ -432,6 +127,8 @@ function ProductPreview({
   language: Language;
   labels: (typeof mirrorInterfaceCopy)[Language];
 }) {
+  const t = useText();
+
   const Arrow = side === "left" ? ArrowLeft : ArrowRight;
 
   return (
@@ -488,6 +185,8 @@ function CartPanel({
   onRemove: (variantId: string) => void;
   onCheckout: () => void;
 }) {
+  const t = useText();
+
   return (
     <>
       <motion.button
@@ -561,7 +260,7 @@ function CartPanel({
           )}
         </div>
         <footer className="mirror-cart-footer">
-          {error && <p className="mirror-inline-error" role="alert">{error}</p>}
+          {error && <p className="mirror-inline-error" role="alert">{t(error)}</p>}
           <div className="mirror-cart-total"><span>{labels.total}</span><strong>{money(total, language)}</strong></div>
           <button
             type="button"
@@ -579,41 +278,37 @@ function CartPanel({
 }
 
 export default function MirrorRoom() {
+  const t = useText();
+
   const [activeCategory, setActiveCategory] = useState<Category>("Top Body");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
+  // Keep the in-progress shopping basket when visiting the dedicated fitting page.
+  const [cartRestored, setCartRestored] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem("mirror-shopping-cart") || "[]");
+      if (Array.isArray(saved)) setCart(saved.filter(item => item && typeof item.variantId === "string" && typeof item.quantity === "number"));
+    } catch { /* Storage may be disabled by the browser. */ }
+    setCartRestored(true);
+  }, []);
+  useEffect(() => {
+    if (cartRestored) {
+      try { sessionStorage.setItem("mirror-shopping-cart", JSON.stringify(cart)); } catch { /* The server cart remains available. */ }
+    }
+  }, [cart, cartRestored]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [language, setLanguage] = useState<Language>("UZ");
-  const [isLanguageReady, setIsLanguageReady] = useState(false);
+  const {language,setLanguage} = useMarketingLanguage();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [cameraStarted, setCameraStarted] = useState(false);
-  const [isCameraStarting, setIsCameraStarting] = useState(false);
-  const [cameraStatusTarget, setCameraStatusTarget] = useState<HTMLDivElement | null>(null);
-  const [arEnabled, setAREnabled] = useState(true);
-  const [arShirt, setARShirt] = useState<ARShirt>("blue");
-  const [poseStatusTarget, setPoseStatusTarget] = useState<HTMLDivElement | null>(null);
-  const [removeBackground, setRemoveBackground] = useState(true);
-  const [, setSegmentationReady] = useState(false);
-  const [cameraError, setCameraError] = useState<MirrorCopyKey | "">("");
-  const [photoPreview, setPhotoPreview] = useState("");
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const [customerPhoto, setCustomerPhoto] = useState<File | null>(null);
-  const [aiError, setAIError] = useState("");
-  const [tryOnResult, setTryOnResult] = useState<string | null>(null);
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<MirrorCopyKey | "">("");
   const [cartSyncError, setCartSyncError] = useState<MirrorCopyKey | "">("");
   const [cartNotice, setCartNotice] = useState<MirrorCopyKey | "">("");
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const languageMenuRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
   const lastWheelChangeAt = useRef(0);
-  const tryOnRequestId = useRef(0);
   const strings = copy[language] as Record<MirrorCopyKey, string>;
   const labels = mirrorInterfaceCopy[language];
 
@@ -622,13 +317,13 @@ export default function MirrorRoom() {
     keepPreviousData: false,
     revalidateOnFocus: false,
   });
-  const usingDemoCatalog = process.env.NODE_ENV === "development" && !isLoading && !data?.length && (Boolean(productError) || Array.isArray(data));
-  const products = data?.length ? data : usingDemoCatalog ? demoProductsByCategory[activeCategory] : [];
+  const products = data ?? [];
   const currentProduct = products[currentIndex];
   const selectedVariant = useMemo(() => {
     if (!currentProduct) return null;
     return currentProduct.variants?.find((variant) => variant.id === selectedVariantId)
       ?? currentProduct.variants?.find((variant) => variant.inStock)
+      ?? currentProduct.variants?.[0]
       ?? null;
   }, [currentProduct, selectedVariantId]);
   const prevProductIndex = products.length > 2
@@ -639,49 +334,8 @@ export default function MirrorRoom() {
   const nextProduct = nextProductIndex >= 0 ? products[nextProductIndex] : undefined;
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const availableSizes = [...new Set((currentProduct?.variants ?? []).filter((variant) => variant.inStock).map((variant) => variant.size))];
-  const availableColors = [...new Set((currentProduct?.variants ?? []).filter((variant) => variant.inStock).map((variant) => variant.color))];
-
-  useEffect(() => {
-    if (!customerPhoto) { setPhotoPreview(""); return; }
-    const url = URL.createObjectURL(customerPhoto);
-    setPhotoPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [customerPhoto]);
-
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      tryOnRequestId.current += 1;
-    };
-  }, []);
-
-  useEffect(() => {
-    const savedLanguage = document.cookie
-      .split("; ")
-      .find((cookie) => cookie.startsWith("mirror_language="))
-      ?.split("=")[1];
-
-    if (mirrorLanguages.includes(savedLanguage as Language)) {
-      setLanguage(savedLanguage as Language);
-    }
-    setIsLanguageReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isLanguageReady) return;
-
-    document.documentElement.lang = mirrorLanguageLocale[language];
-    document.documentElement.dir = language === "AR" ? "rtl" : "ltr";
-    document.cookie = `mirror_language=${language}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  }, [isLanguageReady, language]);
-
-  useEffect(() => {
-    return () => {
-      document.documentElement.lang = "uz-UZ";
-      document.documentElement.dir = "ltr";
-    };
-  }, []);
+  const availableSizes = [...new Set((currentProduct?.variants ?? []).map((variant) => variant.size))];
+  const availableColors = [...new Set((currentProduct?.variants ?? []).map((variant) => variant.color))];
 
   useEffect(() => {
     const closeLanguageMenu = (event: MouseEvent) => {
@@ -701,93 +355,13 @@ export default function MirrorRoom() {
     };
   }, []);
 
-  const startCamera = useCallback(async () => {
-    if (cameraStarted || isCameraStarting) return;
-    setIsCameraStarting(true);
-    setCameraError("");
-    let stream: MediaStream | null = null;
-
-    try {
-      if (!window.isSecureContext) {
-        setCameraError("cameraSecureError");
-        return;
-      }
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraError("cameraUnavailableError");
-        return;
-      }
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "user" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: false,
-        });
-      } catch (cause) {
-        if (!(cause instanceof Error) || cause.name !== "OverconstrainedError") throw cause;
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      }
-
-      streamRef.current = stream;
-      const video = videoRef.current;
-      if (!video) throw new Error("Camera video element is unavailable.");
-      video.srcObject = stream;
-      await video.play();
-
-      stream.getVideoTracks().forEach((track) => {
-        track.onended = () => {
-          if (streamRef.current !== stream) return;
-          streamRef.current = null;
-          setCameraStarted(false);
-          setSegmentationReady(false);
-          setCameraError("cameraDisconnectedError");
-        };
-      });
-      setCameraStarted(true);
-    } catch (cause) {
-      console.error("Camera startup error:", cause);
-      stream?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
-      setCameraStarted(false);
-
-      const errorName = cause instanceof Error ? cause.name : "";
-      if (errorName === "NotAllowedError" || errorName === "SecurityError") {
-        setCameraError("cameraBlockedError");
-      } else if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
-        setCameraError("cameraNotFoundError");
-      } else if (errorName === "NotReadableError" || errorName === "AbortError") {
-        setCameraError("cameraBusyError");
-      } else {
-        setCameraError("cameraGenericError");
-      }
-    } finally {
-      setIsCameraStarting(false);
-    }
-  }, [cameraStarted, isCameraStarting, strings]);
-
-  const stopCamera = () => {
-    tryOnRequestId.current += 1;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setCameraStarted(false);
-    setSegmentationReady(false);
-    setIsProcessingAI(false);
-    setTryOnResult(null);
-  };
-
   const selectProduct = (index: number) => {
     if (!products.length) return;
     const productIndex = ((index % products.length) + products.length) % products.length;
     const product = products[productIndex];
-    const variant = product.variants?.find((item) => item.inStock);
+    const variant = product.variants?.find((item) => item.inStock) ?? product.variants?.[0];
     setCurrentIndex(productIndex);
     setSelectedVariantId(variant?.id ?? "");
-    setTryOnResult(null);
     setIsEditOpen(false);
     // Product browsing must never automatically submit a paid generation.
   };
@@ -797,14 +371,14 @@ export default function MirrorRoom() {
   };
 
   const chooseSize = (size: string) => {
-    const variant = currentProduct?.variants?.find((item) => item.inStock && item.size === size && item.color === selectedVariant?.color)
-      ?? currentProduct?.variants?.find((item) => item.inStock && item.size === size);
+    const variant = currentProduct?.variants?.find((item) => item.size === size && item.color === selectedVariant?.color)
+      ?? currentProduct?.variants?.find((item) => item.size === size);
     if (variant) setSelectedVariantId(variant.id);
   };
 
   const chooseColor = (color: string) => {
-    const variant = currentProduct?.variants?.find((item) => item.inStock && item.color === color && item.size === selectedVariant?.size)
-      ?? currentProduct?.variants?.find((item) => item.inStock && item.color === color);
+    const variant = currentProduct?.variants?.find((item) => item.color === color && item.size === selectedVariant?.size)
+      ?? currentProduct?.variants?.find((item) => item.color === color);
     if (variant) setSelectedVariantId(variant.id);
   };
 
@@ -830,87 +404,6 @@ export default function MirrorRoom() {
     event.preventDefault();
     lastWheelChangeAt.current = Date.now();
     changeProduct(delta > 0 ? "right" : "left");
-  };
-
-  async function requestTryOn(product: Product, variant: ProductVariant) {
-    if (isProcessingAI) return;
-    if (sessionStorage.getItem("mirror_tryon_job") || sessionStorage.getItem("mirror_tryon_request")) { setAIError("Check the previous try-on before starting another generation."); return; }
-    if (!window.confirm("Send this photo to FASHN AI for a paid try-on? Your photo is processed by FASHN. MIRROR keeps the private result for up to 15 minutes; FASHN may retain base64 outputs for 60 minutes and processing inputs for up to one day. Only this photo is sent, not continuous video.")) return;
-    const requestId = ++tryOnRequestId.current;
-    const video = videoRef.current;
-    if (!customerPhoto && (!cameraStarted || !video?.videoWidth)) {
-      setCameraError("cameraMustStart");
-      return;
-    }
-    setAIError("");
-    setCameraError("");
-    setIsProcessingAI(true);
-    setTryOnResult(null);
-    try {
-      let imageBlob: Blob | null = customerPhoto;
-      if (!imageBlob && video) {
-        const capture = document.createElement("canvas");
-        capture.width = video.videoWidth; capture.height = video.videoHeight;
-        capture.getContext("2d")?.drawImage(video, 0, 0);
-        imageBlob = await new Promise<Blob | null>(resolve => capture.toBlob(resolve, "image/jpeg", 0.92));
-      }
-      if (!imageBlob) throw new Error("Could not prepare the photo.");
-      if (requestId !== tryOnRequestId.current) return;
-      const formData = new FormData();
-      formData.append("user_image", imageBlob, customerPhoto?.name || "customer.jpg");
-      formData.append("product_id", product.id);
-      formData.append("variant_id", variant.id);
-      formData.append("consent", "true");
-      const key = crypto.randomUUID();
-      sessionStorage.setItem("mirror_tryon_request", key);
-      const response = await apiFetch("/try-on", { method: "POST", headers: { "Idempotency-Key": key }, body: formData });
-      const result = await response.json().catch(() => null) as TryonJob | null;
-      if (!response.ok) {
-        // Definitive pre-submission errors allow correction. Network/5xx failures
-        // retain the request key so reconnect can reconcile without resubmitting.
-        if (result?.submitted === false || [400, 401, 403, 409, 413, 415, 422].includes(response.status)) sessionStorage.removeItem("mirror_tryon_request");
-        const message = result?.error?.startsWith("AI generation is disabled") ? "AI generation is disabled for this demo. No image was generated or credit used. One real test requires operator approval." : result?.error;
-        throw new Error(message || `Try-on request failed (${response.status}). Check the previous try-on before trying again.`);
-      }
-      if (!result?.id) throw new Error("The try-on service returned no session ID.");
-      sessionStorage.setItem("mirror_tryon_job", result.id);
-      const finished = await waitForTryon(result, () => requestId !== tryOnRequestId.current);
-      if (finished && requestId === tryOnRequestId.current) setTryOnResult(finished.result_image_url!);
-    } catch (cause) {
-      console.error("Try-on request error:", cause);
-      if (requestId === tryOnRequestId.current) {
-        setAIError(cause instanceof Error ? cause.message : strings.tryOnFailed);
-      }
-    } finally {
-      if (requestId === tryOnRequestId.current) setIsProcessingAI(false);
-    }
-  }
-
-  const resumeTryOn = async () => {
-    let id = sessionStorage.getItem("mirror_tryon_job");
-    const key = sessionStorage.getItem("mirror_tryon_request");
-    if ((!id && !key) || isProcessingAI) { setAIError(isProcessingAI ? "Generation is already processing." : "No previous try-on in this browser session."); return; }
-    const requestId = ++tryOnRequestId.current;
-    setIsProcessingAI(true); setAIError("");
-    try {
-      if (!id && key) {
-        const lookup = await apiFetch(`/try-on?key=${encodeURIComponent(key)}`);
-        const job = await lookup.json().catch(() => null) as TryonJob | null;
-        if (!lookup.ok || !job?.id) {
-          if (lookup.status === 410) sessionStorage.removeItem("mirror_tryon_request");
-          throw new Error(job?.error || "Submission is not confirmed. Ask an administrator to reconcile before retrying.");
-        }
-        id = job.id; sessionStorage.setItem("mirror_tryon_job", id);
-      }
-      if (!id) throw new Error("No previous try-on session was found.");
-      const result = await waitForTryon({ id, status: "PENDING" }, () => requestId !== tryOnRequestId.current);
-      if (result && requestId === tryOnRequestId.current) setTryOnResult(result.result_image_url!);
-    } catch (cause) { if (requestId === tryOnRequestId.current) setAIError(cause instanceof Error ? cause.message : "Could not check the previous try-on."); }
-    finally { if (requestId === tryOnRequestId.current) setIsProcessingAI(false); }
-  };
-
-  const handleTryOn = () => {
-    if (currentProduct && !currentProduct.demo && selectedVariant) void requestTryOn(currentProduct, selectedVariant);
   };
 
   const addToCart = async () => {
@@ -980,29 +473,14 @@ export default function MirrorRoom() {
 
   const productStatus = useMemo(() => {
     if (isLoading) return strings.loading;
-    if (usingDemoCatalog) return strings.demoCatalog;
     if (productError) return strings.catalogError;
     if (!products.length) return strings.noProducts;
     return "";
-  }, [isLoading, productError, products.length, strings, usingDemoCatalog]);
+  }, [isLoading, productError, products.length, strings]);
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className={`mirror-room${cameraStarted ? " is-camera-live" : ""}${cameraStarted && arEnabled && !tryOnResult ? " is-ar-live" : ""}`} dir={language === "AR" ? "rtl" : "ltr"}>
-      <div className="mirror-camera-media-layer">
-        <PersonCutoutCamera
-          videoRef={videoRef}
-          canvasRef={canvasRef}
-          active={cameraStarted}
-          removeBackground={removeBackground && !arEnabled}
-          statusTarget={cameraStatusTarget}
-          showPreview={!tryOnResult}
-          loadingText={strings.backgroundRemoving}
-          errorText={strings.backgroundRemovalError}
-          onReadyChange={setSegmentationReady}
-        />
-        <PoseGarmentOverlay videoRef={videoRef} active={cameraStarted && arEnabled && !tryOnResult} shirt={arShirt} statusTarget={poseStatusTarget} />
-      </div>
+      <main className="mirror-room" dir={language === "AR" ? "rtl" : "ltr"}>
       <div className="mirror-room-shade" aria-hidden="true" />
       <div className="mirror-glass-stage" aria-hidden="true" />
 
@@ -1014,12 +492,9 @@ export default function MirrorRoom() {
             whileTap={{ scale: 0.96 }}
             transition={{ duration: 0.14 }}
             onClick={() => {
-              tryOnRequestId.current += 1;
-              setIsProcessingAI(false);
               setActiveCategory(category);
               setCurrentIndex(0);
               setSelectedVariantId("");
-              setTryOnResult(null);
             }}
             className={activeCategory === category ? "is-active" : ""}
             aria-pressed={activeCategory === category}
@@ -1091,7 +566,7 @@ export default function MirrorRoom() {
       </aside>
 
       <section className="mirror-toolbar" aria-label={labels.fittingRoomControls}>
-        <div className="mirror-brand-pill"><span className="mirror-brand-mark"><Check aria-hidden="true" /></span> MIRROR</div>
+        <div className="mirror-brand-pill"><span className="mirror-brand-mark"><Check aria-hidden="true" /></span>{t("MIRROR")}</div>
         <div className="mirror-toolbar-actions">
           <button type="button" onClick={addToCart} disabled={!selectedVariant?.inStock || currentProduct?.demo} className="mirror-toolbar-pill">
             <ShoppingCart aria-hidden="true" /> <span>{strings.addToCart}</span>
@@ -1099,27 +574,8 @@ export default function MirrorRoom() {
           <button type="button" onClick={() => setIsCartOpen(true)} className="mirror-toolbar-pill">
             <CreditCard aria-hidden="true" /> <span>{strings.cart}</span>
           </button>
-          <button
-            type="button"
-            onClick={cameraStarted ? stopCamera : startCamera}
-            disabled={isCameraStarting}
-            className="mirror-icon-button"
-            aria-busy={isCameraStarting}
-            aria-label={isCameraStarting ? strings.cameraConnecting : cameraStarted ? strings.cameraStop : strings.startCamera}
-            title={isCameraStarting ? strings.cameraConnecting : cameraStarted ? strings.cameraStop : strings.startCamera}
-          >
-            {isCameraStarting ? <LoaderCircle className="mirror-spin" aria-hidden="true" /> : <Camera aria-hidden="true" />}
-          </button>
         </div>
       </section>
-
-      {cameraStarted && (
-        <div className="mirror-camera-live-indicator" role="status">
-          <span className="mirror-camera-live-dot" aria-hidden="true" />
-          <span>{strings.cameraLive}</span>
-          <strong>LIVE</strong>
-        </div>
-      )}
 
       <section
         className="mirror-fitting-stage"
@@ -1153,40 +609,16 @@ export default function MirrorRoom() {
           </>
         )}
 
-        <div className={`mirror-camera-frame ${cameraStarted ? "is-camera-on" : "is-camera-off"}`}>
-          {tryOnResult && <img className="mirror-tryon-result" src={tryOnResult} alt={labels.tryOnResultAlt} />}
-          {!cameraStarted && !tryOnResult && (
-            <motion.div
-              className="mirror-camera-cover"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
-            >
-              <span className="mirror-camera-icon"><Camera aria-hidden="true" /></span>
-              <span className="mirror-eyebrow">{strings.tryOn.toLocaleUpperCase(mirrorLanguageLocale[language])}</span>
-              <h1>{strings.cameraOff}</h1>
-              <p>{strings.cameraPrompt}</p>
-              {cameraError && <p className="mirror-camera-error" role="alert">{strings[cameraError]}</p>}
-              <button type="button" onClick={startCamera} disabled={isCameraStarting} aria-busy={isCameraStarting} className="mirror-primary-button">
-                {isCameraStarting ? <LoaderCircle className="mirror-spin" aria-hidden="true" /> : <Camera aria-hidden="true" />}
-                {isCameraStarting ? strings.cameraConnecting : strings.startCamera}
-              </button>
-            </motion.div>
-          )}
-          {cameraStarted && cameraError && (
-            <p className="mirror-camera-error-toast" role="alert">{strings[cameraError]}</p>
-          )}
-          {isProcessingAI && (
-            <div className="mirror-processing" role="status">
-              <LoaderCircle className="mirror-spin" aria-hidden="true" />
-              <span>{labels.aiProcessing}</span>
-            </div>
-          )}
-
+        <div className="mirror-camera-frame is-camera-off">
+          <div className="mirror-camera-cover">
+            <span className="mirror-camera-icon"><Camera aria-hidden="true" /></span>
+            <h1>Decart Lucy · Real-time AI fitting</h1>
+            <p>Select a catalog garment and choose Try On. Camera sharing starts only after your consent on the fitting page.</p>
+          </div>
         </div>
 
         {productStatus && (
-          <div className={`mirror-catalog-status ${productError && !usingDemoCatalog ? "has-error" : ""}`} role={productError && !usingDemoCatalog ? "alert" : "status"}>
+          <div className={`mirror-catalog-status ${productError ? "has-error" : ""}`} role={productError ? "alert" : "status"}>
             {isLoading && <LoaderCircle className="mirror-spin" aria-hidden="true" />}
             <span>{productStatus}</span>
           </div>
@@ -1202,28 +634,6 @@ export default function MirrorRoom() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
         >
-          <section className="mirror-ar-controls" aria-label="Live 2D AR shirts">
-            <label><input type="checkbox" checked={arEnabled} onChange={event => { setAREnabled(event.target.checked); if (event.target.checked && !cameraStarted && !isCameraStarting) void startCamera(); }} /> Live 2D clothing overlay</label>
-            <p>Select a demo shirt to start the camera. Stand back with both shoulders and hips visible.</p>
-            <div className="mirror-ar-shirts" role="group" aria-label="Choose an AR shirt">
-              {DEMO_AR_SHIRTS.map(item => <button type="button" key={item.id} aria-pressed={arEnabled && arShirt === item.id} onClick={() => { setARShirt(item.id); setAREnabled(true); if (!cameraStarted && !isCameraStarting) void startCamera(); }}>
-                <img src={item.image} alt="" /> <span>{item.name}</span>
-              </button>)}
-            </div>
-            <div id="mirror-pose-status" ref={setPoseStatusTarget} />
-            <small>Local 2D AR demo assets. Separate from catalog products and FASHN photo generation.</small>
-          </section>
-          <div className="mirror-selected-garment">
-            <GarmentImage src={currentProduct.image} name={`Selected garment: ${getProductName(currentProduct, language)}`} />
-            <span>Selected garment · {selectedVariant ? `${selectedVariant.size} / ${getColorName(selectedVariant.color, language)}` : "Choose an available variant"}</span>
-          </div>
-          <div className="mirror-garment-list" role="group" aria-label="Choose a garment">
-            {products.map((product, index) => <button type="button" key={product.id} onClick={() => selectProduct(index)} aria-pressed={index === currentIndex}>
-              <GarmentImage src={product.image} name={getProductName(product, language)} />
-              <span>{getProductName(product, language)}</span>
-              {index === currentIndex && <Check aria-hidden="true" />}
-            </button>)}
-          </div>
           <div className="mirror-product-heading">
             <div className="mirror-product-title">
               <span className="mirror-eyebrow">{labels.categories[activeCategory]}</span>
@@ -1262,7 +672,7 @@ export default function MirrorRoom() {
           {isEditOpen && (
             <div className="mirror-variant-list" aria-label={labels.availableVariants}>
               {(currentProduct.variants ?? []).map((variant) => (
-                <button type="button" key={variant.id} disabled={!variant.inStock} className={selectedVariant?.id === variant.id ? "is-selected" : ""} onClick={() => setSelectedVariantId(variant.id)}>
+                <button type="button" key={variant.id} className={selectedVariant?.id === variant.id ? "is-selected" : ""} onClick={() => setSelectedVariantId(variant.id)}>
                   {variant.size} · {getColorName(variant.color, language)}{!variant.inStock ? ` · ${labels.soldOut}` : ""}
                 </button>
               ))}
@@ -1270,26 +680,8 @@ export default function MirrorRoom() {
           )}
           {cartNotice && !isCartOpen && <p className="mirror-cart-notice" role="status">{strings[cartNotice]}</p>}
           {cartSyncError && <p className="mirror-inline-error" role="alert">{strings[cartSyncError]}</p>}
-          <div className="mirror-photo-upload">
-            <label className="mirror-background-option"><input type="checkbox" checked={removeBackground} disabled={arEnabled} onChange={event => setRemoveBackground(event.target.checked)} /> Remove camera background (optional)</label>
-            <div id="mirror-segmentation-status" ref={setCameraStatusTarget} aria-live="polite" />
-            <label htmlFor="mirror-customer-photo">1. Use your camera or upload a photo</label>
-            <input id="mirror-customer-photo" ref={photoInputRef} type="file" accept="image/jpeg,image/png" disabled={isProcessingAI} onChange={event => {
-              const file = event.target.files?.[0];
-              if (file && (file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png"].includes(file.type))) { event.target.value = ""; setAIError("Choose a JPEG or PNG up to 5 MiB."); return; }
-              setCustomerPhoto(file || null); setTryOnResult(null); setAIError("");
-            }} />
-            {photoPreview && <img className="mirror-uploaded-photo" src={photoPreview} alt="Your selected try-on photo" />}
-            {customerPhoto ? <div><span>Uploaded photo selected</span> <button type="button" disabled={isProcessingAI} onClick={() => { setCustomerPhoto(null); if (photoInputRef.current) photoInputRef.current.value = ""; }}>Remove photo / use camera</button></div> : <p>{cameraStarted ? "Live camera frame will be used." : "Start the camera above, or choose a photo."}</p>}
-            <p>2. Select the garment and size above, then request AI try-on.</p>
-            <p>FASHN AI produces a separate still image. The live 2D overlay above is local, approximate and free; it does not call FASHN.</p>
-            {!['Top Body', 'Pants', 'Full Body'].includes(activeCategory) && <p role="status">AI try-on supports tops, pants and full-body garments only.</p>}
-            <button type="button" disabled={isProcessingAI} onClick={() => void resumeTryOn()}>Check previous try-on</button>
-            {aiError && <p role="alert">{aiError}</p>}
-            {tryOnResult && <button type="button" onClick={() => setTryOnResult(null)}><RotateCcw aria-hidden="true" /> {strings.backToCamera}</button>}
-          </div>
           <div className="mirror-product-actions">
-            <button type="button" className="mirror-secondary-button" onClick={handleTryOn} disabled={(!cameraStarted && !customerPhoto) || !selectedVariant || currentProduct.demo || isProcessingAI || !["Top Body", "Pants", "Full Body"].includes(activeCategory)}>
+            <button type="button" className="mirror-secondary-button" onClick={() => { window.location.assign(`/mirror/try-on?productId=${encodeURIComponent(currentProduct.id)}`); }} disabled={!selectedVariant || !currentProduct.image || currentProduct.demo}>
               <Camera aria-hidden="true" /> {strings.tryOn}
             </button>
             <button type="button" className="mirror-primary-button" onClick={addToCart} disabled={!selectedVariant?.inStock || currentProduct.demo}>

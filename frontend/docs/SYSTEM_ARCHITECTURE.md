@@ -3,12 +3,6 @@
 ## Decision
 Retain the existing Next.js App Router application as the initial modular monolith. The repository is already a single Next.js 16 project with reusable admin, marketing, and kiosk components; replacing it with the suggested Vite/Go split would be a high-cost rewrite with no current scale evidence. Keep browser UI, server-rendered pages, and API route handlers in this codebase, and extract services only when operational evidence requires it.
 
-## Current stack
-- Next.js 16.4, React 19, TypeScript, Tailwind v4, shadcn/ui, Lucide, Recharts, and MediaPipe Vision.
-- Neon Postgres with Drizzle ORM (`drizzle-orm/node-postgres`) and a shared `pg.Pool` using `DATABASE_URL`.
-- Neon Managed Better Auth is provisioned at the project level. Its user/session tables live in the `neon_auth` schema; application role and tenant membership data live in `public.app_memberships`.
-- Vercel deployment configuration exists; `next.config.mjs` sets baseline headers. No Go API, worker, queue, object store, payment integration, migrations pipeline, or production AI provider adapter is present in the repository.
-
 ## Target module boundaries
 - `app/`: public pages, role-specific panels, kiosk route, and versioned Route Handlers.
 - `components/`: shared design system plus marketing, administration, and kiosk UI.

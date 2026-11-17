@@ -1,6 +1,17 @@
 import type { MarketingLanguage } from "@/components/marketing-language";
 
 export const marketingHomeCopy = {
+  TR: {
+    navigation: { items: ["Nasıl çalışır", "Özellikler", "Markalar için", "Fiyatlandırma", "SSS"], mainLabel: "Ana gezinme", mobileLabel: "Mobil gezinme", homeLabel: "MIRROR ana sayfa", skip: "İçeriğe geç", virtualMirror: "Sanal aynayı aç", requestDemo: "Demo iste", menu: "Menü", chooseLanguage: "Dil seçin" },
+    footer: { description: "Moda markaları ve mağazalar için sanal deneme ve perakende yönetimi.", about: "Hakkımızda", founder: "Kurucu hakkında", privacy: "Gizlilik", contact: "İletişim", mirror: "Sanal ayna", rights: "Tüm hakları saklıdır.", moreLabel: "Diğer bağlantılar" },
+    categories: ["Tam kombin", "Üst giyim", "Başlık", "Pantolon", "Ayakkabı"],
+    hero: { eyebrow: "Moda ve teknoloji bir arada", titleStart: "Deneyin. ", titleAccent: "Güvenle", titleEnd: " seçin.", description: "MIRROR, müşterilerin ürünleri sanal olarak denemesini sağlar; perakende ekiplerine katalog ve şube deneyimini tek yerden yönetme imkânı sunar.", noAccount: "Hesap gerektirmez", cameraPermission: "Kamera yalnızca izinle açılır", fittingLabel: "Sanal deneme", fittingTitle: "Günlük stil, yeni bir bakış", fittingDescription: "Kataloğunuzdaki ürünlerle", tryOn: "Dene", privacyNote: "Gizlilik kullanıcının seçimiyle başlar", imageAlt: "Aydınlık bir butik deneme odasındaki model" },
+    features: { eyebrow: "MIRROR ile", title: "Mağaza deneyiminizi dijital olanaklarla geliştirin.", description: "Sanal ayna, müşterilerle mağaza ekibi arasında doğal bir köprü kurar; ürün odakta kalır.", cards: [{title:"Sanal deneme",body:"Ürünleri mağaza içinde etkileşimli ve ekrana uygun bir deneyimle sunun."},{title:"Tek ürün kataloğu",body:"Ürünleri, varyantları ve şube bilgilerini tutarlı biçimde yönetin."},{title:"Perakende ekipleri için",body:"Markalar, şubeler ve personel için ayrı iş akışları planlayın."}] },
+    catalog: { imageAlt: "Örnek katalogdaki krem renkli giysiler", badge: "Katalog ürünü", eyebrow: "Perakende için ortak bir katman", title: "Tek ürün. Katalogdan şubeye.", description: "Ürün varyantlarını ve şube stoklarını müşteri deneyimine bağlayın. Ekibiniz ürün çeşitlerini tek bir noktadan düzenlesin.", bullets: ["Düzenli ürün ve varyant kataloğu", "Şube atamaları ve stok görünümü", "Tutarlı değişiklik geçmişi"], allFeatures: "Tüm özellikler" },
+    privacy: { eyebrow: "Gizlilik temel ilkemizdir", title: "Kamera deneyimi kullanıcının izniyle başlar.", description: "Kamera habersiz açılmaz. Kullanıcı karar vermeden önce neye izin verdiğini görür.", link: "Gizlilik ve güvenlik" },
+    cta: { eyebrow: "Sonraki adım", title: "MIRROR mağazanızın iş akışına uygun mu?", description: "Kataloğunuzu, mağazalarınızı ve ihtiyaç duyduğunuz cihazları konuşalım." },
+  },
+
   UZ: {
     navigation: {
       items: ["Qanday ishlaydi", "Imkoniyatlar", "Brendlar uchun", "Tariflar", "Savol-javob"],

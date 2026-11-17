@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useText } from "@/components/marketing-language";
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import {
   ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Download, MoreHorizontal,
@@ -36,10 +38,10 @@ function rowValue(row: AdminRecord, key: string) {
   return row[key] === undefined || row[key] === "" ? "—" : String(row[key])
 }
 
-function formatCell(row: AdminRecord, key: string) {
+function formatCell(row: AdminRecord, key: string, t: (key: string) => string) {
   if (key === "status" || key === "result" || key === "aiStatus") {
     const value = rowValue(row, key)
-    return <Badge className={`mirror-admin-status-badge is-${statusVariant(value)}`}>{value}</Badge>
+    return <Badge className={`mirror-admin-status-badge is-${statusVariant(value)}`}>{t(value)}</Badge>
   }
   if (key === "name" && typeof row.image === "string") {
     return <span className="mirror-admin-product-cell"><Image src={row.image} alt="" width={38} height={38} /><strong>{rowValue(row, key)}</strong></span>
@@ -53,8 +55,8 @@ function formatCell(row: AdminRecord, key: string) {
   if (["stock", "stores", "devices", "products", "order", "available", "blocked", "quantity", "branches", "sessions"].includes(key)) {
     return <span className="mirror-admin-number">{Number(row[key] ?? 0).toLocaleString()}</span>
   }
-  if (key === "role" || key === "type" || key === "sku" || key === "deviceId" || key === "transferId") return <span className="mirror-admin-mono">{rowValue(row, key)}</span>
-  return rowValue(row, key)
+  if (key === "role" || key === "type" || key === "sku" || key === "deviceId" || key === "transferId") return <span className="mirror-admin-mono">{key === "role" || key === "type" ? t(rowValue(row,key)) : rowValue(row,key)}</span>
+  return ["module", "type", "audience", "target", "cycle", "category", "availability", "action"].includes(key) ? t(rowValue(row,key)) : rowValue(row,key)
 }
 
 function csvEscape(value: unknown) {
@@ -84,6 +86,8 @@ function scopedDemoRows(section: string, scopeMode: "all" | "brand" | "store") {
 }
 
 export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode = "all" }: { section: string; searchTerm: string; readOnly?: boolean; scopeMode?: "all" | "brand" | "store" }) {
+  const t = useText();
+
   const definition = SECTION_DEFINITIONS[section]
   const isReadOnly = Boolean(readOnly || definition.readOnly)
   const [rows, setRows] = useState<AdminRecord[]>(() => catalogEnabled && section === "products" ? [] : scopedDemoRows(section, scopeMode))
@@ -103,6 +107,7 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
   const [feedback, setFeedback] = useState("")
   const [liveProducts, setLiveProducts] = useState<APIProduct[] | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [saving, setSaving] = useState(false)
   const liveCatalog = catalogEnabled && section === "products"
   async function refreshProducts() {
     const products = await loadProducts()
@@ -126,6 +131,10 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
     setLiveProducts(null)
     if (catalogEnabled && section === "products") void refreshProducts().catch(error => setFeedback(String(error)))
   }, [section, scopeMode])
+
+  useEffect(() => {
+    if (section === "products" && !isReadOnly && new URLSearchParams(window.location.search).get("create") === "true") openCreate()
+  }, [section])
 
   useEffect(() => {
     setPage(1)
@@ -186,7 +195,11 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
 
   function saveRecord(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setFormError("")
     if (section === "products") {
+      if (imageFiles.some(file => !["image/jpeg", "image/png"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+        setFormError("Use JPEG or PNG images up to 5 MiB each."); return
+      }
       const currentPrice = Number(formValues.price)
       const oldPrice = Number(formValues.oldPrice)
       if (formValues.oldPrice && oldPrice <= currentPrice) {
@@ -208,7 +221,7 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
     const sensitiveFields = ["role", "status", "scope", "store", "brand", "permissions"]
     const changedSensitiveField = Boolean(editing && sensitiveFields.some((key) => editing[key] !== nextRecord[key]))
     const sensitiveCreation = isNew && ["brands", "stores", "users", "subscriptions", "devices", "staff", "brand-branches", "brand-devices"].includes(section)
-    if (changedSensitiveField || sensitiveCreation) {
+    if (!liveCatalog && (changedSensitiveField || sensitiveCreation)) {
       setPendingSave({ record: nextRecord, isNew })
       setFormOpen(false)
       return
@@ -218,12 +231,25 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
 
   async function commitRecord(record: AdminRecord, isNew: boolean) {
     if (liveCatalog) {
-      if (!liveProducts) { setFeedback("Live catalog has not loaded. No changes were saved."); return }
+      if (saving) return
+      const existing = isNew ? undefined : liveProducts?.find(p => p.id === record.id)
+      if (!isNew && !existing) {
+        const message = "The product to edit is unavailable. Reload the catalog and try again."
+        setFormError(message); setFeedback(message)
+        return
+      }
+      setFormError("")
+      setSaving(true)
       try {
-        await persistProduct(record, isNew ? undefined : liveProducts.find(p => p.id === record.id), imageFiles)
+        await persistProduct(record, existing, imageFiles, saved => {
+          setEditing(productRecord(saved))
+          // Keep the persisted identity even if upload or catalog refresh fails.
+          setLiveProducts(products => [...(products ?? []).filter(p => p.id !== saved.id), saved])
+        })
         await refreshProducts(); setImageFiles([]); setFormOpen(false)
         setFeedback("Product saved to the backend. Branch stock is managed separately through inventory.")
-      } catch (error) { setFeedback(String(error)); await refreshProducts().catch(() => {}) }
+      } catch (error) { setFormError(String(error)); setFeedback(String(error)); await refreshProducts().catch(() => {}) }
+      finally { setSaving(false) }
       return
     }
     if (isNew) {
@@ -271,7 +297,7 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }))
     const anchor = document.createElement("a")
     anchor.href = url
-    anchor.download = `mirror-${section}-demo.csv`
+    anchor.download = `mirror-${section}${liveCatalog ? "" : "-demo"}.csv`
     anchor.click()
     URL.revokeObjectURL(url)
   }
@@ -285,7 +311,7 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
   function renderField(field: FormField) {
     return (
       <Field key={field.key} data-invalid={field.key === "oldPrice" && Boolean(formError)}>
-        <FieldLabel htmlFor={`record-${field.key}`}>{field.label}</FieldLabel>
+        <FieldLabel htmlFor={`record-${field.key}`}>{t(field.label)}</FieldLabel>
         {field.options ? (
           <select
             id={`record-${field.key}`}
@@ -294,7 +320,7 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
             value={formValues[field.key] ?? ""}
             onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
           >
-            {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
+            {field.options.map((option) => <option key={option} value={option}>{t(option)}</option>)}
           </select>
         ) : field.multiline ? (
           <textarea
@@ -325,8 +351,8 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
   if (!definition || definition.integrationPending) {
     return (
       <Card className="mirror-admin-pending-inline">
-        <CardHeader><div className="mirror-admin-section-icon"><Download aria-hidden="true" /></div><CardTitle>{definition?.title ?? "Data"} API connection pending</CardTitle></CardHeader>
-        <CardContent><p>Orders and checkout endpoints are not present in this frontend checkout. This page shows no sample orders and does not invent payment or purchase activity.</p><Badge variant="outline">Not connected</Badge></CardContent>
+        <CardHeader><div className="mirror-admin-section-icon"><Download aria-hidden="true" /></div><CardTitle>{t(definition?.title ?? "Data")}{t("API connection pending")}</CardTitle></CardHeader>
+        <CardContent><p>{t("Orders and checkout endpoints are not present in this frontend checkout. This page shows no sample orders and does not invent payment or purchase activity.")}</p><Badge variant="outline">{t("Not connected")}</Badge></CardContent>
       </Card>
     )
   }
@@ -334,69 +360,69 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
   return (
     <section className="mirror-admin-section">
       <div className="mirror-admin-section-heading">
-        <div><span className="mirror-admin-eyebrow">MANAGEMENT</span><h1>{definition.title}</h1><p>{definition.description}</p></div>
+        <div><span className="mirror-admin-eyebrow">{t("MANAGEMENT")}</span><h1>{t(definition.title)}</h1><p>{t(definition.description)}</p></div>
         <div className="mirror-admin-section-actions">
-          <Button variant="outline" onClick={() => exportCsv()}><Download data-icon="inline-start" />Export CSV</Button>
-          {definition.addLabel && !isReadOnly && <Button onClick={openCreate}><Plus data-icon="inline-start" />{definition.addLabel}</Button>}
+          <Button variant="outline" onClick={() => exportCsv()}><Download data-icon="inline-start" />{t("Export CSV")}</Button>
+          {definition.addLabel && !isReadOnly && <Button onClick={openCreate}><Plus data-icon="inline-start" />{t(definition.addLabel)}</Button>}
         </div>
       </div>
 
       <Card className="mirror-admin-data-card">
         <CardHeader className="mirror-admin-data-card-header">
-          <div><CardTitle>{definition.title} directory</CardTitle><p>{filteredRows.length} records in the preview dataset</p></div>
+          <div><CardTitle>{t(definition.title)}{t("directory")}</CardTitle><p>{filteredRows.length}{t(liveCatalog ? "products in the catalog" : "records in the preview dataset")}</p></div>
           <div className="mirror-admin-table-controls">
-            <label className="mirror-admin-table-search"><Search aria-hidden="true" /><Input aria-label={`Search ${definition.title}`} placeholder="Filter records" value={tableQuery} onChange={(event) => setTableQuery(event.target.value)} /></label>
+            <label className="mirror-admin-table-search"><Search aria-hidden="true" /><Input aria-label={t("Search {title}",{title:t(definition.title)})} placeholder={t("Filter records")} value={tableQuery} onChange={(event) => setTableQuery(event.target.value)} /></label>
             {filterDefinitions.map((filterDefinition) => (
               <div className="mirror-admin-filter-control" key={filterDefinition.key}><SlidersHorizontal aria-hidden="true" /><Select value={filters[filterDefinition.key] || "all"} onValueChange={(value) => { setFilters((current) => ({ ...current, [filterDefinition.key]: value === "all" ? "" : value ?? "" })); setPage(1) }}>
-                <SelectTrigger aria-label={`Filter ${definition.title} by ${filterDefinition.key}`}><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label={t("Filter {title} by {field}",{title:t(definition.title),field:filterDefinition.key})}><SelectValue /></SelectTrigger>
                 <SelectContent><SelectGroup>
-                  <SelectItem value="all">{filterDefinition.label}</SelectItem>
-                  {filterDefinition.options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                  <SelectItem value="all">{t(filterDefinition.label)}</SelectItem>
+                  {filterDefinition.options.map((option) => <SelectItem key={option} value={option}>{t(option)}</SelectItem>)}
                 </SelectGroup></SelectContent>
               </Select></div>
             ))}
           </div>
         </CardHeader>
         <CardContent className="mirror-admin-table-content">
-          {feedback && <p className="mirror-admin-action-feedback" role="status">{feedback}</p>}
-          {selectedRows.length > 0 && <div className="mirror-admin-bulk-toolbar" role="status"><strong>{selectedRows.length} selected</strong><Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}><Download data-icon="inline-start" />Export selected</Button><Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Clear selection</Button></div>}
+          {feedback && <p className="mirror-admin-action-feedback" role="status">{t(feedback)}</p>}
+          {selectedRows.length > 0 && <div className="mirror-admin-bulk-toolbar" role="status"><strong>{selectedRows.length}{t("selected")}</strong><Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}><Download data-icon="inline-start" />{t("Export selected")}</Button><Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>{t("Clear selection")}</Button></div>}
           <Table>
             <TableHeader><TableRow>
-              <TableHead className="mirror-admin-select-head"><Checkbox checked={allVisibleSelected} aria-label={someVisibleSelected && !allVisibleSelected ? "Select all visible records, some already selected" : "Select all visible records"} onCheckedChange={(checked) => toggleVisibleSelection(checked === true)} /></TableHead>
+              <TableHead className="mirror-admin-select-head"><Checkbox checked={allVisibleSelected} aria-label={someVisibleSelected && !allVisibleSelected ? t("Select all visible records, some already selected") : t("Select all visible records")} onCheckedChange={(checked) => toggleVisibleSelection(checked === true)} /></TableHead>
               {definition.columns.map((column) => <TableHead key={column.key} aria-sort={sortKey === column.key ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                <Button variant="ghost" size="sm" className="mirror-admin-sort-button" onClick={() => toggleSort(column.key)}>{column.label}{sortKey === column.key ? sortDirection === "asc" ? <ArrowUp aria-hidden="true" /> : <ArrowDown aria-hidden="true" /> : null}</Button>
+                <Button variant="ghost" size="sm" className="mirror-admin-sort-button" onClick={() => toggleSort(column.key)}>{t(column.label)}{sortKey === column.key ? sortDirection === "asc" ? <ArrowUp aria-hidden="true" /> : <ArrowDown aria-hidden="true" /> : null}</Button>
               </TableHead>)}
-              <TableHead className="mirror-admin-actions-head"><span className="sr-only">Actions</span></TableHead>
+              <TableHead className="mirror-admin-actions-head"><span className="sr-only">{t("Actions")}</span></TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {visibleRows.map((row) => <TableRow key={row.id}>
-                <TableCell className="mirror-admin-select-cell"><Checkbox aria-label={`Select ${rowValue(row, definition.columns[0]?.key ?? "record")}`} checked={selectedIds.includes(row.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, row.id])] : current.filter((id) => id !== row.id))} /></TableCell>
-                {definition.columns.map((column) => <TableCell key={column.key}>{formatCell(row, column.key)}</TableCell>)}
+                <TableCell className="mirror-admin-select-cell"><Checkbox aria-label={`Select ${rowValue(row, definition.columns[0]?.key ?? t("record"))}`} checked={selectedIds.includes(row.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, row.id])] : current.filter((id) => id !== row.id))} /></TableCell>
+                {definition.columns.map((column) => <TableCell key={column.key}>{formatCell(row, column.key, t)}</TableCell>)}
                 <TableCell className="mirror-admin-row-actions">
                   <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Actions for ${rowValue(row, definition.columns[0]?.key ?? "name")}`} />}><MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
+                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Actions for ${rowValue(row, definition.columns[0]?.key ?? t("name"))}`} />}><MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setDetailRecord(row)}>View details</DropdownMenuItem>
-                      {!isReadOnly && section === "applications" && row.status === "Pending review" && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => requestStatusChange(row, "Approved")}>Approve application</DropdownMenuItem><DropdownMenuItem onClick={() => requestStatusChange(row, "Rejected")}>Reject application</DropdownMenuItem></>}
-                      {!isReadOnly && section === "brands" && row.status !== "Active" && <DropdownMenuItem onClick={() => requestStatusChange(row, "Active")}>Activate brand</DropdownMenuItem>}
-                      {!isReadOnly && section === "brands" && row.status !== "Suspended" && <DropdownMenuItem onClick={() => requestStatusChange(row, "Suspended")}>Suspend brand</DropdownMenuItem>}
-                      {!isReadOnly && (section === "notifications" || section === "brand-notifications") && row.status === "Unread" && <DropdownMenuItem onClick={() => markRead(row)}>Mark as read</DropdownMenuItem>}
-                      {!isReadOnly && section === "campaigns" && row.status !== "Archived" && <DropdownMenuItem onClick={() => requestStatusChange(row, "Archived")}>Archive campaign</DropdownMenuItem>}
-                      {!isReadOnly && <DropdownMenuItem onClick={() => openEdit(row)}>Edit</DropdownMenuItem>}
+                      <DropdownMenuItem onClick={() => setDetailRecord(row)}>{t("View details")}</DropdownMenuItem>
+                      {!isReadOnly && section === "applications" && row.status === "Pending review" && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => requestStatusChange(row, "Approved")}>{t("Approve application")}</DropdownMenuItem><DropdownMenuItem onClick={() => requestStatusChange(row, "Rejected")}>{t("Reject application")}</DropdownMenuItem></>}
+                      {!isReadOnly && section === "brands" && row.status !== "Active" && <DropdownMenuItem onClick={() => requestStatusChange(row, "Active")}>{t("Activate brand")}</DropdownMenuItem>}
+                      {!isReadOnly && section === "brands" && row.status !== "Suspended" && <DropdownMenuItem onClick={() => requestStatusChange(row, "Suspended")}>{t("Suspend brand")}</DropdownMenuItem>}
+                      {!isReadOnly && (section === "notifications" || section === "brand-notifications") && row.status === "Unread" && <DropdownMenuItem onClick={() => markRead(row)}>{t("Mark as read")}</DropdownMenuItem>}
+                      {!isReadOnly && section === "campaigns" && row.status !== "Archived" && <DropdownMenuItem onClick={() => requestStatusChange(row, "Archived")}>{t("Archive campaign")}</DropdownMenuItem>}
+                      {!isReadOnly && <DropdownMenuItem onClick={() => openEdit(row)}>{t("Edit")}</DropdownMenuItem>}
                       {!isReadOnly && <DropdownMenuSeparator />}
-                      {!isReadOnly && <DropdownMenuItem variant="destructive" onClick={() => setDeleteRecord(row)}>Delete</DropdownMenuItem>}
+                      {!isReadOnly && <DropdownMenuItem variant="destructive" onClick={() => setDeleteRecord(row)}>{t("Delete")}</DropdownMenuItem>}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
               </TableRow>)}
-              {visibleRows.length === 0 && <TableRow><TableCell colSpan={definition.columns.length + 2} className="mirror-admin-empty-cell"><div className="mirror-admin-empty-state"><Search aria-hidden="true" /><strong>No matching records</strong><span>Try a different search or filter.</span></div></TableCell></TableRow>}
+              {visibleRows.length === 0 && <TableRow><TableCell colSpan={definition.columns.length + 2} className="mirror-admin-empty-cell"><div className="mirror-admin-empty-state"><Search aria-hidden="true" /><strong>{t("No matching records")}</strong><span>{t("Try a different search or filter.")}</span></div></TableCell></TableRow>}
             </TableBody>
           </Table>
-          <div className="mirror-admin-table-footer"><span>Showing {filteredRows.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredRows.length)} of {filteredRows.length}</span><div><Button variant="outline" size="sm" aria-label="Previous page" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft aria-hidden="true" />Previous</Button><span className="mirror-admin-page-count">Page {page} of {pageCount}</span><Button variant="outline" size="sm" aria-label="Next page" disabled={page >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>Next<ChevronRight aria-hidden="true" /></Button></div></div>
+          <div className="mirror-admin-table-footer"><span>{t("Showing")} {filteredRows.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredRows.length)} {t("of")} {filteredRows.length}</span><div><Button variant="outline" size="sm" aria-label={t("Previous page")} disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft aria-hidden="true" />{t("Previous")}</Button><span className="mirror-admin-page-count">{t("Page")} {page} {t("of")} {pageCount}</span><Button variant="outline" size="sm" aria-label={t("Next page")} disabled={page >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>{t("Next")}<ChevronRight aria-hidden="true" /></Button></div></div>
         </CardContent>
       </Card>
 
-      {section === "inventory" && <Card className="mirror-admin-data-card"><CardHeader><div><CardTitle>Inventory history</CardTitle><p>Illustrative receipts and stock adjustments for this workspace.</p></div></CardHeader><CardContent className="mirror-admin-table-content"><div className="mirror-admin-workflow-table"><table><thead><tr><th>Activity</th><th>Product variant</th><th>Branch</th><th>Quantity</th><th>Date</th><th>Updated by</th></tr></thead><tbody>{[
+      {section === "inventory" && <Card className="mirror-admin-data-card"><CardHeader><div><CardTitle>{t("Inventory history")}</CardTitle><p>{t("Illustrative receipts and stock adjustments for this workspace.")}</p></div></CardHeader><CardContent className="mirror-admin-table-content"><div className="mirror-admin-workflow-table"><table><thead><tr><th>{t("Activity")}</th><th>{t("Product variant")}</th><th>{t("Branch")}</th><th>{t("Quantity")}</th><th>{t("Date")}</th><th>{t("Updated by")}</th></tr></thead><tbody>{[
         { id: "ih-01", action: "Stock received", product: "Linen relaxed blazer · S / Oat", branch: "Le Marais", quantity: "+10", date: "Nov 09, 2026 · 11:28", actor: "Lea Dubois" },
         { id: "ih-02", action: "Transfer sent", product: "Cotton poplin shirt · S / Sky", branch: "Lyon Presqu’île", quantity: "−4", date: "Nov 08, 2026 · 15:42", actor: "Camille Moreau" },
         { id: "ih-03", action: "Stock blocked", product: "Draped evening dress · M / Midnight", branch: "Le Marais", quantity: "−2", date: "Nov 07, 2026 · 10:05", actor: "Amira Laurent" },
@@ -404,34 +430,34 @@ export function AdminRecords({ section, searchTerm, readOnly = false, scopeMode 
 
       <Dialog open={formOpen} onOpenChange={(open) => { setFormOpen(open); if (!open) setImagePreviews([]) }}>
         <DialogContent className="mirror-admin-form-dialog">
-          <DialogHeader><DialogTitle>{editing ? `Edit ${definition.title.toLowerCase().replace(/s$/, "")}` : definition.addLabel}</DialogTitle><DialogDescription>Changes in this preview stay in memory and are not sent to a backend.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? `${t("Edit")} ${t(definition.title)}` : t(definition.addLabel ?? "Add")}</DialogTitle><DialogDescription>{t(liveCatalog ? "Products are saved to PostgreSQL; approved images are uploaded to Supabase Storage." : "Changes in this preview stay in memory and are not sent to a backend.")}</DialogDescription></DialogHeader>
           <form onSubmit={saveRecord} className="mirror-admin-record-form">
             <FieldGroup className="mirror-admin-field-grid">{definition.fields?.map(renderField)}</FieldGroup>
-            {["brands", "stores", "products", "categories", "campaigns"].includes(section) && <Field><FieldLabel htmlFor="record-image">{section === "brands" ? "Brand logo" : section === "stores" ? "Store logo" : section === "categories" ? "Category image" : section === "campaigns" ? "Campaign image" : "Product images"}</FieldLabel><Input id="record-image" type="file" accept="image/*" multiple={section === "products"} onChange={(event) => { const files = Array.from(event.target.files ?? []); setImageFiles(files); setImagePreviews(files.map((file) => URL.createObjectURL(file))) }} /><p className="mirror-admin-field-note"><UploadCloud aria-hidden="true" /> {liveCatalog ? "Selected images will be approved for public catalog access when saved." : "Local preview only; image upload API is pending."}</p>{imagePreviews.map((preview, index) => <img key={preview} className="mirror-admin-upload-preview" src={preview} alt={`Selected ${section === "products" ? "product" : "record"} image ${index + 1}`} />)}</Field>}
-            {formError && <p id="sale-price-error" className="mirror-admin-form-error" role="alert">{formError}</p>}
-            <DialogFooter><Button type="button" variant="outline" onClick={() => { setFormOpen(false); setImagePreviews([]) }}>Cancel</Button><Button type="submit">Save in preview</Button></DialogFooter>
+            {["brands", "stores", "products", "categories", "campaigns"].includes(section) && <Field><FieldLabel htmlFor="record-image">{section === "brands" ? t("Brand logo") : section === "stores" ? t("Store logo") : section === "categories" ? t("Category image") : section === "campaigns" ? t("Campaign image") : t("Product images")}</FieldLabel><Input id="record-image" type="file" accept={liveCatalog ? "image/jpeg,image/png" : "image/*"} multiple={section === "products"} onChange={(event) => { const files = Array.from(event.target.files ?? []); setImageFiles(files); setImagePreviews(files.map((file) => URL.createObjectURL(file))) }} /><p className="mirror-admin-field-note"><UploadCloud aria-hidden="true" /> {liveCatalog ? t("Selected images will be approved for public catalog access when saved.") : t("Local preview only; image upload API is pending.")}</p>{imagePreviews.map((preview, index) => <img key={preview} className="mirror-admin-upload-preview" src={preview} alt={`Selected ${section === "products" ? t("product") : t("record")} image ${index + 1}`} />)}</Field>}
+            {formError && <p id="sale-price-error" className="mirror-admin-form-error" role="alert">{t(formError)}</p>}
+            <DialogFooter><Button type="button" variant="outline" onClick={() => { setFormOpen(false); setImagePreviews([]) }}>{t("Cancel")}</Button><Button type="submit" disabled={saving}>{t(saving ? "Saving…" : liveCatalog ? "Save product" : "Save in preview")}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={Boolean(detailRecord)} onOpenChange={(open) => !open && setDetailRecord(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{detailRecord ? rowValue(detailRecord, definition.columns[0]?.key ?? "name") : "Record details"}</DialogTitle><DialogDescription>Illustrative record · preview only</DialogDescription></DialogHeader>
-          {detailRecord && <dl className="mirror-admin-detail-list">{(definition.fields ?? definition.columns).map((field) => <div key={field.key}><dt>{field.label}</dt><dd>{rowValue(detailRecord, field.key)}</dd></div>)}</dl>}
+          <DialogHeader><DialogTitle>{detailRecord ? rowValue(detailRecord, definition.columns[0]?.key ?? "name") : t("Record details")}</DialogTitle><DialogDescription>{t(liveCatalog ? "Saved catalog product" : "Illustrative record · preview only")}</DialogDescription></DialogHeader>
+          {detailRecord && <dl className="mirror-admin-detail-list">{(definition.fields ?? definition.columns).map((field) => <div key={field.key}><dt>{t(field.label)}</dt><dd>{rowValue(detailRecord, field.key)}</dd></div>)}</dl>}
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={Boolean(pendingSave)} onOpenChange={(open) => !open && setPendingSave(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{pendingSave?.isNew ? "Create this account or resource?" : "Confirm this sensitive change?"}</AlertDialogTitle><AlertDialogDescription>This action affects access or an administrative resource. In this preview it changes only illustrative data in memory; no backend request is made.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmPendingSave}>Confirm change</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>{pendingSave?.isNew ? t("Create this account or resource?") : t("Confirm this sensitive change?")}</AlertDialogTitle><AlertDialogDescription>{t("This action affects access or an administrative resource. In this preview it changes only illustrative data in memory; no backend request is made.")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>{t("Cancel")}</AlertDialogCancel><AlertDialogAction onClick={confirmPendingSave}>{t("Confirm change")}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <AlertDialog open={Boolean(deleteRecord)} onOpenChange={(open) => !open && setDeleteRecord(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete this record?</AlertDialogTitle><AlertDialogDescription>This removes the illustrative row from this browser session only. No production data is changed.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={removeRecord}>Delete record</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>{t("Delete this record?")}</AlertDialogTitle><AlertDialogDescription>{t(liveCatalog ? "This archives the product and removes its catalog images from storage. It will no longer appear in MIRROR." : "This removes the illustrative row from this browser session only. No production data is changed.")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>{t("Cancel")}</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={removeRecord}>{t("Delete record")}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </section>

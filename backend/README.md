@@ -31,6 +31,6 @@ test server in the API suite is a local contract simulation. Live staging storag
 tests require MIRROR_LIVE_SUPABASE_TEST=1 and real Supabase environment values;
 they skip by default. No deployment or live project acceptance is implied by unit tests.
 
-## FASHN AI
+## Decart Lucy realtime fitting
 
-See [FASHN integration](../docs/FASHN_INTEGRATION.md) for environment loading, migration 003, asynchronous endpoints, private results and verification limits. `go run ./cmd/api check-fashn-config` checks key presence without a network request. Paid submissions default off, even when FASHN_API_KEY is present.
+Decart Lucy V-TON is the sole fitting provider. See [realtime fitting](../docs/DECART_REALTIME.md). `go run ./cmd/api check-decart-config` checks configuration without provider requests. `DECART_ENABLE_REALTIME` defaults to false; keep it disabled until paid testing is explicitly approved. The main provider key stays on the backend.

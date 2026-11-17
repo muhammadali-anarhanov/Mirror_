@@ -1,4 +1,6 @@
-export type PortfolioLocale = "kk" | "en" | "ru" | "uz";
+import {portfolioArabic,portfolioTurkish} from "./translations/portfolio.ts";
+
+export type PortfolioLocale = "kk" | "en" | "ru" | "uz" | "ar" | "tr";
 
 export type PortfolioCopy = {
   nav: { about: string; skills: string; project: string; journey: string; contact: string; connect: string; language: string; openMenu: string; closeMenu: string };
@@ -16,9 +18,13 @@ export const portfolioLocales: { code: PortfolioLocale; label: string; name: str
   { code: "en", label: "EN", name: "English" },
   { code: "ru", label: "РУС", name: "Русский" },
   { code: "uz", label: "UZ", name: "O‘zbekcha" },
+  { code: "ar", label: "AR", name: "العربية" },
+  { code: "tr", label: "TR", name: "Türkçe" },
 ];
 
 export const portfolioContent: Record<PortfolioLocale, PortfolioCopy> = {
+  ar:portfolioArabic,
+  tr:portfolioTurkish,
   kk: {
     nav: { about: "Мен туралы", skills: "Дағдылар", project: "MIRROR", journey: "Жолым", contact: "Байланыс", connect: "Бірге жасайық", language: "Тілді таңдау", openMenu: "Мәзірді ашу", closeMenu: "Мәзірді жабу" },
     hero: { eyebrow: "IT студенті · өнім жасаушы", headline: "Нақты мәселелерді шешетін технология жасаймын.", description: "Ташенев университетінің IT студентімін және Tomorrow School мектебінде білім аламын. Full-stack әзірлеуге, жасанды интеллектке және ауқымды цифрлық өнімдер жасауға қызығамын.", projectsCta: "Жобаларымды көру", aboutCta: "Мен туралы", previewLabel: "ТАҢДАЛҒАН ЖОБА", previewTitle: "MIRROR", previewDescription: "Сән ритейліне арналған виртуалды киіп көру платформасы", previewStatus: "Прототип әзірленуде", previewAlt: "MIRROR виртуалды киіп көру жобасына арналған сән дүкенінің көрінісі", scroll: "Төмен жылжыңыз" },

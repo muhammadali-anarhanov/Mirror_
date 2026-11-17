@@ -1,0 +1,381 @@
+{
+  "routes": [
+    {
+      "route": "/",
+      "locale": "EN",
+      "heading": "Try it on. Choose with confidence."
+    },
+    {
+      "route": "/mirror",
+      "locale": "EN",
+      "heading": "Camera is off"
+    },
+    {
+      "route": "/login",
+      "locale": "EN",
+      "heading": "Welcome back"
+    },
+    {
+      "route": "/forgot-password",
+      "locale": "EN",
+      "heading": "Reset your password"
+    },
+    {
+      "route": "/reset-password",
+      "locale": "EN",
+      "heading": "Create a new password"
+    },
+    {
+      "route": "/how-it-works",
+      "locale": "EN",
+      "heading": "From trying on to shopping — a simple path"
+    },
+    {
+      "route": "/features",
+      "locale": "EN",
+      "heading": "Fitting room and retail management in one experience"
+    },
+    {
+      "route": "/for-brands",
+      "locale": "EN",
+      "heading": "Bring your brand experience into the store"
+    },
+    {
+      "route": "/pricing",
+      "locale": "EN",
+      "heading": "An approach that fits your business scale"
+    },
+    {
+      "route": "/faq",
+      "locale": "EN",
+      "heading": "Frequently asked questions about MIRROR"
+    },
+    {
+      "route": "/request-demo",
+      "locale": "EN",
+      "heading": "Try MIRROR in your business"
+    },
+    {
+      "route": "/contact",
+      "locale": "EN",
+      "heading": "Contact us"
+    },
+    {
+      "route": "/partnerships",
+      "locale": "EN",
+      "heading": "Start a partnership with MIRROR"
+    },
+    {
+      "route": "/privacy-security",
+      "locale": "EN",
+      "heading": "Trust is part of the experience"
+    },
+    {
+      "route": "/about",
+      "locale": "EN",
+      "heading": "Helping shoppers make clearer choices in store"
+    },
+    {
+      "route": "/founder",
+      "locale": "EN",
+      "heading": "Building technology that solves real problems."
+    },
+    {
+      "route": "/",
+      "locale": "UZ",
+      "heading": "Kiyib ko‘ring. Ishonch bilan tanlang."
+    },
+    {
+      "route": "/mirror",
+      "locale": "UZ",
+      "heading": "Kamera yoqilmagan"
+    },
+    {
+      "route": "/login",
+      "locale": "UZ",
+      "heading": "Xush kelibsiz"
+    },
+    {
+      "route": "/forgot-password",
+      "locale": "UZ",
+      "heading": "Parolni tiklash"
+    },
+    {
+      "route": "/reset-password",
+      "locale": "UZ",
+      "heading": "Yangi parol yarating"
+    },
+    {
+      "route": "/how-it-works",
+      "locale": "UZ",
+      "heading": "Sinashdan xaridgacha — sodda yo‘l"
+    },
+    {
+      "route": "/features",
+      "locale": "UZ",
+      "heading": "Sinov xonasi va retail boshqaruvi — yagona tajribada"
+    },
+    {
+      "route": "/for-brands",
+      "locale": "UZ",
+      "heading": "Brend tajribasini do‘konning o‘zida davom ettiring"
+    },
+    {
+      "route": "/pricing",
+      "locale": "UZ",
+      "heading": "Biznesingiz ko‘lamiga mos yondashuv"
+    },
+    {
+      "route": "/faq",
+      "locale": "UZ",
+      "heading": "MIRROR haqida ko‘p beriladigan savollar"
+    },
+    {
+      "route": "/request-demo",
+      "locale": "UZ",
+      "heading": "MIRROR’ni biznesingizda sinab ko‘ring"
+    },
+    {
+      "route": "/contact",
+      "locale": "UZ",
+      "heading": "Biz bilan bog‘laning"
+    },
+    {
+      "route": "/partnerships",
+      "locale": "UZ",
+      "heading": "MIRROR bilan hamkorlikni boshlang"
+    },
+    {
+      "route": "/privacy-security",
+      "locale": "UZ",
+      "heading": "Ishonch — tajribaning bir qismi"
+    },
+    {
+      "route": "/about",
+      "locale": "UZ",
+      "heading": "Do‘kondagi tanlovni yanada aniqroq qilish uchun"
+    },
+    {
+      "route": "/founder",
+      "locale": "UZ",
+      "heading": "Haqiqiy muammolarni hal qiladigan texnologiyalar yarataman."
+    }
+  ],
+  "layouts": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "video": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "card": {
+        "x": 440,
+        "y": 700.5,
+        "width": 560,
+        "height": 255.5
+      },
+      "toolbar": {
+        "x": 129.59375,
+        "y": 165,
+        "width": 1180.8125,
+        "height": 42
+      }
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "video": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      },
+      "card": {
+        "x": 14,
+        "y": 772,
+        "width": 740,
+        "height": 238
+      },
+      "toolbar": {
+        "x": 58,
+        "y": 112,
+        "width": 698,
+        "height": 34
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "video": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "card": {
+        "x": 14,
+        "y": 592,
+        "width": 362,
+        "height": 238
+      },
+      "toolbar": {
+        "x": 58,
+        "y": 112,
+        "width": 320,
+        "height": 34
+      }
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "video": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 390
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 390
+      },
+      "card": {
+        "x": 172,
+        "y": 208.3125,
+        "width": 500,
+        "height": 167.6875
+      },
+      "toolbar": {
+        "x": 50.625,
+        "y": 68,
+        "width": 742.75,
+        "height": 42
+      }
+    }
+  ],
+  "languages": [
+    {
+      "language": "UZ",
+      "heading": "Kiyib ko‘ring. Ishonch bilan tanlang.",
+      "feature": "Sinov xonasi va retail boshqaruvi — yagona tajribada"
+    },
+    {
+      "language": "RU",
+      "heading": "Примерьте. Выбирайте уверенно.",
+      "feature": "Примерочная и управление магазином в одном интерфейсе"
+    },
+    {
+      "language": "KK",
+      "heading": "Киіп көріңіз. Сеніммен таңдаңыз.",
+      "feature": "Киіп көру мен сауда басқаруы бір тәжірибеде"
+    },
+    {
+      "language": "AR",
+      "heading": "جرّب الإطلالة. واختر بثقة.",
+      "feature": "غرفة القياس وإدارة المتجر في تجربة واحدة"
+    },
+    {
+      "language": "TR",
+      "heading": "Deneyin. Güvenle seçin.",
+      "feature": "Deneme odası ve perakende yönetimi tek deneyimde"
+    },
+    {
+      "language": "EN",
+      "heading": "Try it on. Choose with confidence.",
+      "feature": "Fitting room and retail management in one experience"
+    }
+  ],
+  "ai": [
+    {
+      "state": "SUCCEEDED",
+      "submits": 1,
+      "polls": 1
+    },
+    {
+      "state": "SUCCEEDED",
+      "submits": 2,
+      "polls": 2
+    },
+    {
+      "state": "FAILED",
+      "submits": 3,
+      "polls": 3
+    },
+    {
+      "state": "DISABLED",
+      "submits": 4,
+      "polls": 3
+    },
+    {
+      "state": "SUCCEEDED",
+      "submits": 5,
+      "polls": 4
+    }
+  ],
+  "errors": [],
+  "translationLeaks": [],
+  "guards": [
+    "/brand/dashboard",
+    "/brand/products",
+    "/brand/stock-receiving",
+    "/brand/inventory",
+    "/brand/transfers",
+    "/brand/branches",
+    "/brand/devices",
+    "/brand/staff",
+    "/brand/analytics",
+    "/brand/subscription",
+    "/brand/notifications",
+    "/brand/integrations",
+    "/brand/settings",
+    "/super-admin/dashboard",
+    "/super-admin/brands",
+    "/super-admin/applications",
+    "/super-admin/branches",
+    "/super-admin/campaigns",
+    "/super-admin/subscriptions",
+    "/super-admin/notifications",
+    "/super-admin/audit-logs",
+    "/super-admin/settings",
+    "/staff/dashboard",
+    "/staff/products",
+    "/staff/stock-receiving",
+    "/staff/inventory",
+    "/staff/devices",
+    "/staff/analytics",
+    "/admin/dashboard",
+    "/admin/products"
+  ],
+  "cart": true,
+  "selection": true
+}

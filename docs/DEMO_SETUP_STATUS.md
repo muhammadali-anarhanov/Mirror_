@@ -1,7 +1,5 @@
 # Local MIRROR demo setup — 2026-11-16
 
-The configured development PostgreSQL endpoint matched the configured Supabase project. Before setup there were zero application relations in public/mirror and no non-platform application tables. Existing migrations 001_core.sql, 002_operations.sql and 003_fashn.sql were applied transactionally in order. All three records, 23 required mirror tables (RLS enabled), and seven FASHN job columns were verified.
-
 Storage authentication passed. HTTP 400 on an individual missing bucket was diagnosed from its response as Bucket not found. Created product-images (public) and tryon-images (private), with JPEG/PNG and 5 MiB limits. No pre-existing storage object policies were present. No existing application or storage data was deleted.
 
 ## Running services
@@ -36,12 +34,8 @@ Generated credentials are only in backend/.env.demo, mode 0600, Git-ignored. Do 
 
 ## Limits
 
-No paid FASHN request was sent. Live provider credentials, acceptance and actual generated output remain unverified. No real AI job was created in Supabase. Camera permission, MediaPipe execution and rendered browser interaction still need a physical browser/camera check. Product preview cutout does not provide pose tracking or a fitted 2D garment overlay. The working live demo is login, catalog, camera-code path and product/storage management; never present the demo garment as an AI-generated result.
-
 ## Restart if needed
 
 From backend/: go run ./cmd/api
 
 From frontend/: npm run dev -- --hostname localhost --port 3000
-
-frontend/.env.local holds only nonsecret proxy and live-catalog configuration. backend/.env holds the existing backend secrets. FASHN_ENABLE_PAID_REQUESTS remains false. Do not change it or submit generation until explicitly authorized. Nothing was pushed or deployed.

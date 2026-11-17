@@ -196,16 +196,6 @@
     pointer-events: none;
   }
 
-  .mirror-source-video.is-live-background {
-    inset: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    opacity: 1;
-    transform: scaleX(-1);
-  }
 
   .mirror-camera-media-layer .mirror-person-canvas {
     opacity: 0;
@@ -614,23 +604,7 @@
     box-shadow: none;
   }
 
-  .mirror-source-video {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-  }
 
-  .mirror-source-video.is-visible {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center 24%;
-    opacity: 1;
-    transform: scaleX(-1);
-  }
 
   .mirror-person-canvas,
   .mirror-tryon-result {
@@ -652,29 +626,7 @@
     mask-image: radial-gradient(ellipse 78% 88% at center, #000 66%, transparent 100%);
   }
 
-  .mirror-camera-status {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    z-index: 2;
-    max-width: calc(100% - 24px);
-    margin: 0;
-    padding: 8px 14px;
-    transform: translateX(-50%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 999px;
-    background: rgba(35, 30, 25, 0.72);
-    color: #fff;
-    font-size: 12px;
-    text-align: center;
-    white-space: nowrap;
-    backdrop-filter: blur(12px);
-  }
 
-  .mirror-camera-status.is-error {
-    border-color: rgba(255, 164, 146, 0.4);
-    color: #ffd6cc;
-  }
 
   .mirror-camera-cover {
     position: absolute;
@@ -1971,11 +1923,6 @@
     background: rgba(255, 255, 255, 0.88);
   }
 
-  .mirror-camera-status {
-    border-color: rgba(255, 255, 255, 0.24);
-    background: rgba(22, 43, 77, 0.82);
-    color: #fff;
-  }
 
   .mirror-camera-cover h1,
   .mirror-camera-cover p,
@@ -2278,11 +2225,6 @@
     color: #fff;
   }
 
-  .mirror-room .mirror-camera-status {
-    border-color: rgba(255, 255, 255, 0.22);
-    background: rgba(48, 39, 30, 0.82);
-    color: #fff;
-  }
 
   .mirror-room .mirror-camera-cover h1,
   .mirror-room .mirror-camera-cover p,
@@ -3891,16 +3833,6 @@ body:has(.mirror-auth-page) { background: #F4F6F1; }
   z-index: 0;
 }
 
-.mirror-room.is-camera-live .mirror-source-video.is-live-background {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  filter: none;
-  opacity: 1;
-}
 
 .mirror-room.is-camera-live .mirror-room-shade,
 .mirror-room.is-camera-live .mirror-glass-stage {
@@ -3931,9 +3863,6 @@ body:has(.mirror-auth-page) { background: #F4F6F1; }
 }
 
 @media (orientation: portrait) {
-  .mirror-room.is-camera-live .mirror-source-video.is-live-background {
-    object-fit: contain;
-  }
 }
 .mirror-admin-chart-grid > :nth-child(3) { animation-delay: 140ms; }
 .mirror-admin-chart-grid > :nth-child(4) { animation-delay: 210ms; }
@@ -4338,106 +4267,63 @@ body:has(.mirror-auth-page) {
   .mirror-admin *, .mirror-auth *, .marketing-shell * { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 
-.mirror-photo-upload {
-  position: absolute;
-  bottom: 6rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 12;
-  max-width: min(90vw, 32rem);
-  padding: .6rem .9rem;
-  border-radius: .75rem;
-  background: rgba(15, 23, 42, .85);
-  color: white;
-  font-size: .8rem;
-  pointer-events: auto;
-}
-.mirror-photo-upload input { display: block; max-width: 100%; margin-top: .3rem; }
-.mirror-photo-upload p { margin-top: .4rem; }
 
-/* Keep the live camera and the selectable garment/upload panel in separate areas. */
-.mirror-room .mirror-product-card {
-  top: 128px;
-  right: 20px;
-  bottom: 20px;
-  left: auto;
-  width: 360px;
-  max-height: calc(100dvh - 148px);
-  overflow-y: auto;
-  transform: none;
-  overscroll-behavior: contain;
-}
-.mirror-room .mirror-fitting-stage { inset: 135px 405px 24px 95px; }
-.mirror-room .mirror-camera-frame { width: min(100%, 580px); height: 100%; }
-.mirror-room .mirror-selected-garment { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.mirror-room .mirror-selected-garment > img { width: 110px; height: 130px; object-fit: contain; background: rgba(255,255,255,.85); border-radius: 8px; }
-.mirror-room .mirror-selected-garment > span { font-size: 13px; line-height: 1.4; }
-.mirror-room .mirror-garment-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
-.mirror-room .mirror-garment-list button { display: flex; align-items: center; gap: 7px; min-width: 145px; padding: 6px; border: 1px solid rgba(255,255,255,.4); border-radius: 8px; background: rgba(0,0,0,.2); font-size: 11px; text-align: start; }
-.mirror-room .mirror-garment-list button[aria-pressed="true"] { border: 2px solid #8ff0cf; }
-.mirror-room .mirror-garment-list img { flex-shrink: 0; width: 44px; height: 52px; object-fit: contain; background: white; border-radius: 4px; }
-.mirror-room .mirror-garment-list svg { flex-shrink: 0; width: 14px; }
-.mirror-room .mirror-product-title h2 { max-width: 220px; white-space: normal; }
-.mirror-room .mirror-photo-upload { position: static; transform: none; width: 100%; max-width: none; margin-top: 14px; padding: 12px; border: 1px solid rgba(255,255,255,.3); background: rgba(15,23,42,.78); font-size: 12px; }
-.mirror-room .mirror-photo-upload label { display: block; font-weight: 600; }
-.mirror-room .mirror-photo-upload input { display: block; width: 100%; margin: 8px 0; }
-.mirror-room .mirror-photo-upload p { margin: 8px 0; line-height: 1.4; }
-.mirror-room .mirror-photo-upload button { padding: 6px 8px; border: 1px solid rgba(255,255,255,.4); border-radius: 6px; background: rgba(255,255,255,.1); font-size: 11px; }
-.mirror-room .mirror-uploaded-photo { display: block; max-width: 100%; height: 110px; object-fit: contain; margin: 8px 0; }
-.mirror-room .mirror-image-unavailable { display: inline-block; padding: 12px; border: 1px dashed currentColor; font-size: 12px; }
-.mirror-room .mirror-product-actions { position: sticky; bottom: -15px; padding: 10px 0; background: #554b40; z-index: 2; }
-.mirror-room .mirror-camera-media-layer .mirror-person-canvas.is-ready:not(.is-hidden) { opacity: 1; object-fit: cover; transform: scaleX(-1); }
-.mirror-room .mirror-camera-status { pointer-events: auto; max-width: min(92vw, 560px); white-space: normal; }
-.mirror-room .mirror-camera-status span { display: block; font-size: 11px; }
-.mirror-room .mirror-camera-status button { margin-top: 5px; text-decoration: underline; }
-.mirror-room .mirror-tryon-result { object-fit: contain; mask-image: none; -webkit-mask-image: none; background: #171717; }
+/* Restore the full-screen Smart Mirror composition from 53c85b3.
+   The original floating navigation and bottom product card remain in use. */
+.mirror-room .mirror-camera-media-layer { inset: 0; }
+.mirror-room .mirror-product-card { max-height: min(60dvh, 480px); overflow-y: auto; overscroll-behavior: contain; }
 @media (max-width: 900px) {
-  .mirror-room .mirror-product-card { top: auto; right: 12px; bottom: 12px; left: 12px; width: auto; max-height: 49dvh; }
-  .mirror-room .mirror-fitting-stage { inset: 140px 18px calc(49dvh + 24px) 65px; }
-  .mirror-room .mirror-camera-frame { top: 0; left: 50%; width: 100%; height: 100%; transform: translateX(-50%); }
-  .mirror-room .mirror-product-preview { display: none; }
-  .mirror-room .mirror-selected-garment > img { width: 80px; height: 90px; }
-  .mirror-room .mirror-product-title h2 { max-width: 58vw; }
-  .mirror-room .mirror-camera-cover { padding: 8px; }
-  .mirror-room .mirror-camera-cover h1 { font-size: 18px; }
-  .mirror-room .mirror-camera-cover p { margin: 5px 0; font-size: 11px; }
-  .mirror-room .mirror-camera-icon { display: none; }
+  .mirror-room .mirror-product-card { width: calc(100vw - 28px); max-height: 40dvh; bottom: 14px; }
 }
-.mirror-room .mirror-toolbar { right: 405px; left: 95px; }
-.mirror-room .mirror-photo-upload .mirror-background-option { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; font-weight: 400; }
-.mirror-room .mirror-photo-upload .mirror-background-option input { display: inline-block; width: auto; margin: 0; }
-@media (max-width: 900px) {
-  .mirror-room .mirror-toolbar { top: 105px; left: 65px; right: 18px; }
+@media (max-width: 600px) {
+  .mirror-room .mirror-product-preview { display: block; width: 80px; }
+  .mirror-room .mirror-side-product-name, .mirror-room .mirror-side-product-price { display: none; }
+  .mirror-room .mirror-product-card { padding: 12px; }
 }
-/* Keep segmentation retry reachable below navigation and outside the details panel. */
-.mirror-room .mirror-camera-status { top: auto; bottom: 24px; left: 95px; width: min(500px, calc(100vw - 520px)); transform: none; }
-@media (max-width: 900px) {
-  .mirror-room .mirror-camera-status { bottom: calc(49dvh + 30px); left: 70px; width: calc(100vw - 90px); max-width: none; }
+@media (max-height: 550px) and (orientation: landscape) {
+  .mirror-room.is-camera-live .mirror-camera-live-indicator { top: 162px; right: 14px; left: auto; }
+  .mirror-room .mirror-product-card { width: min(500px,65vw); max-height: 43dvh; }
 }
-.mirror-room #mirror-segmentation-status .mirror-camera-status { position: static; width: 100%; max-width: none; margin: 8px 0; transform: none; }
-
-/* The pose canvas and raw webcam share exactly the same viewport and crop. */
-.mirror-garment-overlay { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; opacity: 0; }
-.mirror-garment-overlay.is-active { opacity: 1; }
-.mirror-room.is-ar-live .mirror-camera-media-layer { inset: 135px 405px 24px 95px; }
-.mirror-room.is-ar-live .mirror-source-video.is-live-background { object-fit: contain; object-position: center; }
-.mirror-ar-controls { padding: 12px; margin-bottom: 14px; border: 1px solid rgba(143,240,207,.6); border-radius: 10px; background: rgba(15,23,42,.8); }
-.mirror-ar-controls > label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-.mirror-ar-controls p, .mirror-ar-controls small { display: block; margin: 8px 0; font-size: 12px; line-height: 1.4; }
-.mirror-ar-shirts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mirror-ar-shirts button { padding: 7px; border: 2px solid transparent; border-radius: 8px; background: rgba(255,255,255,.13); }
-.mirror-ar-shirts button[aria-pressed="true"] { border-color: #8ff0cf; }
-.mirror-ar-shirts img { display: block; width: 100%; height: 95px; object-fit: contain; }
-.mirror-ar-shirts span { display: block; font-size: 12px; }
-.mirror-pose-status { padding: 9px; margin: 8px 0; border-radius: 6px; background: rgba(0,0,0,.25); font-size: 12px; line-height: 1.4; }
-.mirror-pose-status.is-tracking { color: #b2ffe2; }
-.mirror-pose-status.is-error { color: #ffd3c8; }
-.mirror-pose-status button { display: block; margin-top: 7px; padding: 5px; border: 1px solid currentColor; border-radius: 5px; }
-@media (max-width: 900px) {
-  .mirror-room.is-ar-live .mirror-camera-media-layer { inset: 140px 18px calc(49dvh + 24px) 65px; }
-  .mirror-ar-shirts img { height: 70px; }
+@media (min-width: 901px) { .mirror-live-controls { top: 225px; } }
+@media (max-width: 900px) and (orientation: portrait) { .mirror-room .mirror-product-card { max-height: 40dvh; } }
+@media (max-height: 550px) and (orientation: landscape) {
+  .mirror-room.is-camera-live .mirror-camera-live-indicator { top: 160px; right: 14px; left: auto; }
+  .mirror-room .mirror-product-actions { position: sticky; bottom: -12px; padding: 8px; border-radius: 10px; background: rgba(74,68,58,.96); }
 }
-@media (max-width: 900px) and (orientation: landscape) {
-  .mirror-room.is-ar-live .mirror-camera-media-layer, .mirror-room.is-ar-live .mirror-fitting-stage { inset: 105px calc(42vw + 16px) 12px 65px; }
-  .mirror-room.is-ar-live .mirror-product-card { top: 84px; bottom: 12px; left: auto; right: 12px; width: 40vw; max-height: calc(100dvh - 96px); }
+/* Keep the live badge between toolbar groups on portrait screens. */
+@media (max-width: 900px) and (orientation: portrait) {
+  .mirror-room.is-camera-live .mirror-camera-live-indicator { top: 112px; left: 50%; right: auto; transform: translateX(-50%); min-height: 34px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .mirror-room.is-camera-live .mirror-camera-live-indicator > span:nth-child(2) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .mirror-room .mirror-product-preview { position: fixed; top: calc(50dvh - 35px); width: 100px; height: 70px; transform: none; display: flex; align-items: center; gap: 6px; }
+  .mirror-room .mirror-product-preview-left { left: 70px; right: auto; }
+  .mirror-room .mirror-product-preview-right { right: 12px; left: auto; }
+  .mirror-room .mirror-product-arrow { position: static; width: 28px; height: 28px; flex: 0 0 28px; transform: none; margin: 0; }
+  .mirror-room .mirror-product-preview-right .mirror-product-arrow { order: 2; }
+  .mirror-room .mirror-side-product { width: 64px; min-width: 0; padding: 0; }
+  .mirror-room .mirror-side-product img { width: 64px; height: 70px; max-height: 70px; }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .mirror-room.is-camera-live .mirror-camera-live-indicator { top: 116px; left: 50%; right: auto; transform: translateX(-50%); }
+  .mirror-room .mirror-product-preview { position: fixed; top: 164px; width: 90px; height: 70px; transform: none; display: flex; align-items: center; gap: 4px; }
+  .mirror-room .mirror-product-preview-left { left: 80px; right: auto; }
+  .mirror-room .mirror-product-preview-right { right: 12px; left: auto; }
+  .mirror-room .mirror-product-arrow { position: static; width: 24px; height: 24px; flex: 0 0 24px; transform: none; margin: 0; }
+  .mirror-room .mirror-product-preview-right .mirror-product-arrow { order: 2; }
+  .mirror-room .mirror-side-product { width: 62px; min-width: 0; padding: 0; }
+  .mirror-room .mirror-side-product img { width: 62px; height: 70px; max-height: 70px; }
+  .mirror-room .mirror-side-product-name, .mirror-room .mirror-side-product-price { display: none; }
+  .mirror-room .mirror-product-actions { background: #4a443a; }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .mirror-room .mirror-toolbar { top: 68px; }
+  .mirror-room.is-camera-live .mirror-camera-live-indicator { top: 120px; }
+  .mirror-room .mirror-product-preview { top: 172px; }
+}
+@media (min-width: 601px) and (max-width: 900px) and (orientation: portrait) {
+  .mirror-room .mirror-product-preview-left { left: 60px; }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .mirror-room .mirror-side-nav { top: 180px; transform: none; }
 }

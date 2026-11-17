@@ -1,3 +1,5 @@
+import { cookies } from "next/headers"
+import { isLanguage, LANGUAGE_LOCALES } from "@/lib/i18n"
 import { Analytics } from '@vercel/analytics/next'
 import '@fontsource-variable/noto-sans-arabic'
 import type { Metadata, Viewport } from 'next'
@@ -34,15 +36,17 @@ export const viewport: Viewport = {
     themeColor: '#101a15',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const stored = (await cookies()).get("mirror_language")?.value;
+  const language = isLanguage(stored) ? stored : "EN";
   return (
-    <html lang="uz">
+    <html lang={LANGUAGE_LOCALES[language]} dir={language === "AR" ? "rtl" : "ltr"}>
       <body className="antialiased">
-        <MarketingLanguageProvider>{children}</MarketingLanguageProvider>
+        <MarketingLanguageProvider initialLanguage={language}>{children}</MarketingLanguageProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

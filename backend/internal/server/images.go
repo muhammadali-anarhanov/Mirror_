@@ -8,7 +8,6 @@ import (
 	"image/png"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -78,19 +77,6 @@ func (s *Server) uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.MultipartForm.RemoveAll()
 	kind := "product"
-	if strings.HasSuffix(r.URL.Path, "/tryon-images") {
-		kind = "tryon"
-	}
-	if kind == "tryon" && r.FormValue("consent") != "true" {
-		problem(w, 400, "explicit consent is required")
-		return
-	}
-	if kind == "tryon" {
-		if e := s.Storage.CheckBucket(r.Context(), s.Config.TryonBucket, false); e != nil {
-			problem(w, 503, "private storage bucket is not safely configured")
-			return
-		}
-	}
 	if kind == "product" && r.FormValue("approved") != "true" {
 		problem(w, 400, "only approved catalog images may be uploaded")
 		return
@@ -151,12 +137,6 @@ func (s *Server) uploadImage(w http.ResponseWriter, r *http.Request) {
 	id := uuid()
 	bucket := s.Config.ProductBucket
 	var expiry *time.Time
-	if kind == "tryon" {
-		bucket = s.Config.TryonBucket
-		v := time.Now().Add(15 * time.Minute)
-		expiry = &v
-		productID = ""
-	}
 	ext := ".png"
 	if mime == "image/jpeg" {
 		ext = ".jpg"

@@ -1,0 +1,1086 @@
+{
+  "results": [
+    {
+      "kind": "brand",
+      "section": "dashboard",
+      "language": "EN",
+      "heading": "Maison Lune · Overview"
+    },
+    {
+      "kind": "brand",
+      "section": "products",
+      "language": "EN",
+      "heading": "Products"
+    },
+    {
+      "kind": "brand",
+      "section": "stock-receiving",
+      "language": "EN",
+      "heading": "Stock receiving"
+    },
+    {
+      "kind": "brand",
+      "section": "inventory",
+      "language": "EN",
+      "heading": "Inventory"
+    },
+    {
+      "kind": "brand",
+      "section": "transfers",
+      "language": "EN",
+      "heading": "Stock transfers"
+    },
+    {
+      "kind": "brand",
+      "section": "branches",
+      "language": "EN",
+      "heading": "Branches"
+    },
+    {
+      "kind": "brand",
+      "section": "devices",
+      "language": "EN",
+      "heading": "Smart mirror devices"
+    },
+    {
+      "kind": "brand",
+      "section": "staff",
+      "language": "EN",
+      "heading": "Staff"
+    },
+    {
+      "kind": "brand",
+      "section": "analytics",
+      "language": "EN",
+      "heading": "Analytics"
+    },
+    {
+      "kind": "brand",
+      "section": "subscription",
+      "language": "EN",
+      "heading": "Subscription"
+    },
+    {
+      "kind": "brand",
+      "section": "notifications",
+      "language": "EN",
+      "heading": "Notifications"
+    },
+    {
+      "kind": "brand",
+      "section": "integrations",
+      "language": "EN",
+      "heading": "Integrations"
+    },
+    {
+      "kind": "brand",
+      "section": "settings",
+      "language": "EN",
+      "heading": "Brand settings"
+    },
+    {
+      "kind": "super-admin",
+      "section": "dashboard",
+      "language": "EN",
+      "heading": "Platform overview"
+    },
+    {
+      "kind": "super-admin",
+      "section": "brands",
+      "language": "EN",
+      "heading": "Brands"
+    },
+    {
+      "kind": "super-admin",
+      "section": "applications",
+      "language": "EN",
+      "heading": "Brand applications"
+    },
+    {
+      "kind": "super-admin",
+      "section": "branches",
+      "language": "EN",
+      "heading": "Platform branches"
+    },
+    {
+      "kind": "super-admin",
+      "section": "campaigns",
+      "language": "EN",
+      "heading": "Platform campaigns"
+    },
+    {
+      "kind": "super-admin",
+      "section": "subscriptions",
+      "language": "EN",
+      "heading": "Platform subscriptions"
+    },
+    {
+      "kind": "super-admin",
+      "section": "notifications",
+      "language": "EN",
+      "heading": "Notifications"
+    },
+    {
+      "kind": "super-admin",
+      "section": "audit-logs",
+      "language": "EN",
+      "heading": "Audit logs"
+    },
+    {
+      "kind": "super-admin",
+      "section": "settings",
+      "language": "EN",
+      "heading": "Platform settings"
+    },
+    {
+      "kind": "staff",
+      "section": "dashboard",
+      "language": "EN",
+      "heading": "Your workspace"
+    },
+    {
+      "kind": "staff",
+      "section": "products",
+      "language": "EN",
+      "heading": "Products"
+    },
+    {
+      "kind": "staff",
+      "section": "stock-receiving",
+      "language": "EN",
+      "heading": "Stock receiving"
+    },
+    {
+      "kind": "staff",
+      "section": "inventory",
+      "language": "EN",
+      "heading": "Inventory"
+    },
+    {
+      "kind": "staff",
+      "section": "devices",
+      "language": "EN",
+      "heading": "Devices"
+    },
+    {
+      "kind": "staff",
+      "section": "analytics",
+      "language": "EN",
+      "heading": "Analytics"
+    },
+    {
+      "kind": "admin",
+      "section": "dashboard",
+      "language": "EN",
+      "heading": "Maison Lune · Overview"
+    },
+    {
+      "kind": "admin",
+      "section": "products",
+      "language": "EN",
+      "heading": "Products"
+    },
+    {
+      "kind": "brand",
+      "section": "dashboard",
+      "language": "UZ",
+      "heading": "Maison Lune · Umumiy ko‘rinish"
+    },
+    {
+      "kind": "brand",
+      "section": "products",
+      "language": "UZ",
+      "heading": "Mahsulotlar"
+    },
+    {
+      "kind": "brand",
+      "section": "stock-receiving",
+      "language": "UZ",
+      "heading": "Tovar qabul qilish"
+    },
+    {
+      "kind": "brand",
+      "section": "inventory",
+      "language": "UZ",
+      "heading": "Zaxira"
+    },
+    {
+      "kind": "brand",
+      "section": "transfers",
+      "language": "UZ",
+      "heading": "Zaxirani o‘tkazish"
+    },
+    {
+      "kind": "brand",
+      "section": "branches",
+      "language": "UZ",
+      "heading": "Filiallar"
+    },
+    {
+      "kind": "brand",
+      "section": "devices",
+      "language": "UZ",
+      "heading": "Aqlli oyna qurilmalari"
+    },
+    {
+      "kind": "brand",
+      "section": "staff",
+      "language": "UZ",
+      "heading": "Xodimlar"
+    },
+    {
+      "kind": "brand",
+      "section": "analytics",
+      "language": "UZ",
+      "heading": "Tahlillar"
+    },
+    {
+      "kind": "brand",
+      "section": "subscription",
+      "language": "UZ",
+      "heading": "Obuna"
+    },
+    {
+      "kind": "brand",
+      "section": "notifications",
+      "language": "UZ",
+      "heading": "Bildirishnomalar"
+    },
+    {
+      "kind": "brand",
+      "section": "integrations",
+      "language": "UZ",
+      "heading": "Integratsiyalar"
+    },
+    {
+      "kind": "brand",
+      "section": "settings",
+      "language": "UZ",
+      "heading": "Brend sozlamalari"
+    },
+    {
+      "kind": "super-admin",
+      "section": "dashboard",
+      "language": "UZ",
+      "heading": "Platforma ko‘rinishi"
+    },
+    {
+      "kind": "super-admin",
+      "section": "brands",
+      "language": "UZ",
+      "heading": "Brendlar"
+    },
+    {
+      "kind": "super-admin",
+      "section": "applications",
+      "language": "UZ",
+      "heading": "Brend arizalari"
+    },
+    {
+      "kind": "super-admin",
+      "section": "branches",
+      "language": "UZ",
+      "heading": "Platforma filiallari"
+    },
+    {
+      "kind": "super-admin",
+      "section": "campaigns",
+      "language": "UZ",
+      "heading": "Platforma kampaniyalari"
+    },
+    {
+      "kind": "super-admin",
+      "section": "subscriptions",
+      "language": "UZ",
+      "heading": "Platforma obunalari"
+    },
+    {
+      "kind": "super-admin",
+      "section": "notifications",
+      "language": "UZ",
+      "heading": "Bildirishnomalar"
+    },
+    {
+      "kind": "super-admin",
+      "section": "audit-logs",
+      "language": "UZ",
+      "heading": "Audit jurnali"
+    },
+    {
+      "kind": "super-admin",
+      "section": "settings",
+      "language": "UZ",
+      "heading": "Platforma sozlamalari"
+    },
+    {
+      "kind": "staff",
+      "section": "dashboard",
+      "language": "UZ",
+      "heading": "Sizning ish muhitingiz"
+    },
+    {
+      "kind": "staff",
+      "section": "products",
+      "language": "UZ",
+      "heading": "Mahsulotlar"
+    },
+    {
+      "kind": "staff",
+      "section": "stock-receiving",
+      "language": "UZ",
+      "heading": "Tovar qabul qilish"
+    },
+    {
+      "kind": "staff",
+      "section": "inventory",
+      "language": "UZ",
+      "heading": "Zaxira"
+    },
+    {
+      "kind": "staff",
+      "section": "devices",
+      "language": "UZ",
+      "heading": "Qurilmalar"
+    },
+    {
+      "kind": "staff",
+      "section": "analytics",
+      "language": "UZ",
+      "heading": "Tahlillar"
+    },
+    {
+      "kind": "admin",
+      "section": "dashboard",
+      "language": "UZ",
+      "heading": "Maison Lune · Umumiy ko‘rinish"
+    },
+    {
+      "kind": "admin",
+      "section": "products",
+      "language": "UZ",
+      "heading": "Mahsulotlar"
+    },
+    {
+      "kind": "brand",
+      "section": "dashboard",
+      "language": "RU",
+      "heading": "Maison Lune · Обзор"
+    },
+    {
+      "kind": "brand",
+      "section": "products",
+      "language": "RU",
+      "heading": "Товары"
+    },
+    {
+      "kind": "brand",
+      "section": "stock-receiving",
+      "language": "RU",
+      "heading": "Приёмка товара"
+    },
+    {
+      "kind": "brand",
+      "section": "inventory",
+      "language": "RU",
+      "heading": "Запасы"
+    },
+    {
+      "kind": "brand",
+      "section": "transfers",
+      "language": "RU",
+      "heading": "Перемещения"
+    },
+    {
+      "kind": "brand",
+      "section": "branches",
+      "language": "RU",
+      "heading": "Филиалы"
+    },
+    {
+      "kind": "brand",
+      "section": "devices",
+      "language": "RU",
+      "heading": "Устройства умного зеркала"
+    },
+    {
+      "kind": "brand",
+      "section": "staff",
+      "language": "RU",
+      "heading": "Сотрудники"
+    },
+    {
+      "kind": "brand",
+      "section": "analytics",
+      "language": "RU",
+      "heading": "Аналитика"
+    },
+    {
+      "kind": "brand",
+      "section": "subscription",
+      "language": "RU",
+      "heading": "Подписка"
+    },
+    {
+      "kind": "brand",
+      "section": "notifications",
+      "language": "RU",
+      "heading": "Уведомления"
+    },
+    {
+      "kind": "brand",
+      "section": "integrations",
+      "language": "RU",
+      "heading": "Интеграции"
+    },
+    {
+      "kind": "brand",
+      "section": "settings",
+      "language": "RU",
+      "heading": "Настройки бренда"
+    },
+    {
+      "kind": "super-admin",
+      "section": "dashboard",
+      "language": "RU",
+      "heading": "Обзор платформы"
+    },
+    {
+      "kind": "super-admin",
+      "section": "brands",
+      "language": "RU",
+      "heading": "Бренды"
+    },
+    {
+      "kind": "super-admin",
+      "section": "applications",
+      "language": "RU",
+      "heading": "Заявки брендов"
+    },
+    {
+      "kind": "super-admin",
+      "section": "branches",
+      "language": "RU",
+      "heading": "Филиалы платформы"
+    },
+    {
+      "kind": "super-admin",
+      "section": "campaigns",
+      "language": "RU",
+      "heading": "Кампании платформы"
+    },
+    {
+      "kind": "super-admin",
+      "section": "subscriptions",
+      "language": "RU",
+      "heading": "Подписки платформы"
+    },
+    {
+      "kind": "super-admin",
+      "section": "notifications",
+      "language": "RU",
+      "heading": "Уведомления"
+    },
+    {
+      "kind": "super-admin",
+      "section": "audit-logs",
+      "language": "RU",
+      "heading": "Журнал аудита"
+    },
+    {
+      "kind": "super-admin",
+      "section": "settings",
+      "language": "RU",
+      "heading": "Настройки платформы"
+    },
+    {
+      "kind": "staff",
+      "section": "dashboard",
+      "language": "RU",
+      "heading": "Ваша рабочая область"
+    },
+    {
+      "kind": "staff",
+      "section": "products",
+      "language": "RU",
+      "heading": "Товары"
+    },
+    {
+      "kind": "staff",
+      "section": "stock-receiving",
+      "language": "RU",
+      "heading": "Приёмка товара"
+    },
+    {
+      "kind": "staff",
+      "section": "inventory",
+      "language": "RU",
+      "heading": "Запасы"
+    },
+    {
+      "kind": "staff",
+      "section": "devices",
+      "language": "RU",
+      "heading": "Устройства"
+    },
+    {
+      "kind": "staff",
+      "section": "analytics",
+      "language": "RU",
+      "heading": "Аналитика"
+    },
+    {
+      "kind": "admin",
+      "section": "dashboard",
+      "language": "RU",
+      "heading": "Maison Lune · Обзор"
+    },
+    {
+      "kind": "admin",
+      "section": "products",
+      "language": "RU",
+      "heading": "Товары"
+    },
+    {
+      "kind": "brand",
+      "section": "dashboard",
+      "language": "KK",
+      "heading": "Maison Lune · Шолу"
+    },
+    {
+      "kind": "brand",
+      "section": "products",
+      "language": "KK",
+      "heading": "Өнімдер"
+    },
+    {
+      "kind": "brand",
+      "section": "stock-receiving",
+      "language": "KK",
+      "heading": "Тауар қабылдау"
+    },
+    {
+      "kind": "brand",
+      "section": "inventory",
+      "language": "KK",
+      "heading": "Қойма"
+    },
+    {
+      "kind": "brand",
+      "section": "transfers",
+      "language": "KK",
+      "heading": "Қоймааралық ауыстыру"
+    },
+    {
+      "kind": "brand",
+      "section": "branches",
+      "language": "KK",
+      "heading": "Филиалдар"
+    },
+    {
+      "kind": "brand",
+      "section": "devices",
+      "language": "KK",
+      "heading": "Ақылды айна құрылғылары"
+    },
+    {
+      "kind": "brand",
+      "section": "staff",
+      "language": "KK",
+      "heading": "Қызметкерлер"
+    },
+    {
+      "kind": "brand",
+      "section": "analytics",
+      "language": "KK",
+      "heading": "Талдау"
+    },
+    {
+      "kind": "brand",
+      "section": "subscription",
+      "language": "KK",
+      "heading": "Жазылым"
+    },
+    {
+      "kind": "brand",
+      "section": "notifications",
+      "language": "KK",
+      "heading": "Хабарландырулар"
+    },
+    {
+      "kind": "brand",
+      "section": "integrations",
+      "language": "KK",
+      "heading": "Интеграциялар"
+    },
+    {
+      "kind": "brand",
+      "section": "settings",
+      "language": "KK",
+      "heading": "Бренд баптаулары"
+    },
+    {
+      "kind": "super-admin",
+      "section": "dashboard",
+      "language": "KK",
+      "heading": "Платформа шолуы"
+    },
+    {
+      "kind": "super-admin",
+      "section": "brands",
+      "language": "KK",
+      "heading": "Брендтер"
+    },
+    {
+      "kind": "super-admin",
+      "section": "applications",
+      "language": "KK",
+      "heading": "Бренд өтінімдері"
+    },
+    {
+      "kind": "super-admin",
+      "section": "branches",
+      "language": "KK",
+      "heading": "Платформа филиалдары"
+    },
+    {
+      "kind": "super-admin",
+      "section": "campaigns",
+      "language": "KK",
+      "heading": "Платформа науқандары"
+    },
+    {
+      "kind": "super-admin",
+      "section": "subscriptions",
+      "language": "KK",
+      "heading": "Платформа жазылымдары"
+    },
+    {
+      "kind": "super-admin",
+      "section": "notifications",
+      "language": "KK",
+      "heading": "Хабарландырулар"
+    },
+    {
+      "kind": "super-admin",
+      "section": "audit-logs",
+      "language": "KK",
+      "heading": "Аудит журналы"
+    },
+    {
+      "kind": "super-admin",
+      "section": "settings",
+      "language": "KK",
+      "heading": "Платформа баптаулары"
+    },
+    {
+      "kind": "staff",
+      "section": "dashboard",
+      "language": "KK",
+      "heading": "Сіздің жұмыс кеңістігіңіз"
+    },
+    {
+      "kind": "staff",
+      "section": "products",
+      "language": "KK",
+      "heading": "Өнімдер"
+    },
+    {
+      "kind": "staff",
+      "section": "stock-receiving",
+      "language": "KK",
+      "heading": "Тауар қабылдау"
+    },
+    {
+      "kind": "staff",
+      "section": "inventory",
+      "language": "KK",
+      "heading": "Қойма"
+    },
+    {
+      "kind": "staff",
+      "section": "devices",
+      "language": "KK",
+      "heading": "Құрылғылар"
+    },
+    {
+      "kind": "staff",
+      "section": "analytics",
+      "language": "KK",
+      "heading": "Талдау"
+    },
+    {
+      "kind": "admin",
+      "section": "dashboard",
+      "language": "KK",
+      "heading": "Maison Lune · Шолу"
+    },
+    {
+      "kind": "admin",
+      "section": "products",
+      "language": "KK",
+      "heading": "Өнімдер"
+    },
+    {
+      "kind": "brand",
+      "section": "dashboard",
+      "language": "AR",
+      "heading": "Maison Lune · نظرة عامة"
+    },
+    {
+      "kind": "brand",
+      "section": "products",
+      "language": "AR",
+      "heading": "المنتجات"
+    },
+    {
+      "kind": "brand",
+      "section": "stock-receiving",
+      "language": "AR",
+      "heading": "استلام المخزون"
+    },
+    {
+      "kind": "brand",
+      "section": "inventory",
+      "language": "AR",
+      "heading": "المخزون"
+    },
+    {
+      "kind": "brand",
+      "section": "transfers",
+      "language": "AR",
+      "heading": "نقل المخزون"
+    },
+    {
+      "kind": "brand",
+      "section": "branches",
+      "language": "AR",
+      "heading": "الفروع"
+    },
+    {
+      "kind": "brand",
+      "section": "devices",
+      "language": "AR",
+      "heading": "أجهزة المرايا الذكية"
+    },
+    {
+      "kind": "brand",
+      "section": "staff",
+      "language": "AR",
+      "heading": "الموظفون"
+    },
+    {
+      "kind": "brand",
+      "section": "analytics",
+      "language": "AR",
+      "heading": "التحليلات"
+    },
+    {
+      "kind": "brand",
+      "section": "subscription",
+      "language": "AR",
+      "heading": "الاشتراك"
+    },
+    {
+      "kind": "brand",
+      "section": "notifications",
+      "language": "AR",
+      "heading": "الإشعارات"
+    },
+    {
+      "kind": "brand",
+      "section": "integrations",
+      "language": "AR",
+      "heading": "التكاملات"
+    },
+    {
+      "kind": "brand",
+      "section": "settings",
+      "language": "AR",
+      "heading": "إعدادات العلامة التجارية"
+    },
+    {
+      "kind": "super-admin",
+      "section": "dashboard",
+      "language": "AR",
+      "heading": "نظرة عامة على المنصة"
+    },
+    {
+      "kind": "super-admin",
+      "section": "brands",
+      "language": "AR",
+      "heading": "العلامات التجارية"
+    },
+    {
+      "kind": "super-admin",
+      "section": "applications",
+      "language": "AR",
+      "heading": "طلبات العلامات التجارية"
+    },
+    {
+      "kind": "super-admin",
+      "section": "branches",
+      "language": "AR",
+      "heading": "فروع المنصة"
+    },
+    {
+      "kind": "super-admin",
+      "section": "campaigns",
+      "language": "AR",
+      "heading": "حملات المنصة"
+    },
+    {
+      "kind": "super-admin",
+      "section": "subscriptions",
+      "language": "AR",
+      "heading": "اشتراكات المنصة"
+    },
+    {
+      "kind": "super-admin",
+      "section": "notifications",
+      "language": "AR",
+      "heading": "الإشعارات"
+    },
+    {
+      "kind": "super-admin",
+      "section": "audit-logs",
+      "language": "AR",
+      "heading": "سجل التدقيق"
+    },
+    {
+      "kind": "super-admin",
+      "section": "settings",
+      "language": "AR",
+      "heading": "إعدادات المنصة"
+    },
+    {
+      "kind": "staff",
+      "section": "dashboard",
+      "language": "AR",
+      "heading": "مساحة عملك"
+    },
+    {
+      "kind": "staff",
+      "section": "products",
+      "language": "AR",
+      "heading": "المنتجات"
+    },
+    {
+      "kind": "staff",
+      "section": "stock-receiving",
+      "language": "AR",
+      "heading": "استلام المخزون"
+    },
+    {
+      "kind": "staff",
+      "section": "inventory",
+      "language": "AR",
+      "heading": "المخزون"
+    },
+    {
+      "kind": "staff",
+      "section": "devices",
+      "language": "AR",
+      "heading": "الأجهزة"
+    },
+    {
+      "kind": "staff",
+      "section": "analytics",
+      "language": "AR",
+      "heading": "التحليلات"
+    },
+    {
+      "kind": "admin",
+      "section": "dashboard",
+      "language": "AR",
+      "heading": "Maison Lune · نظرة عامة"
+    },
+    {
+      "kind": "admin",
+      "section": "products",
+      "language": "AR",
+      "heading": "المنتجات"
+    },
+    {
+      "kind": "brand",
+      "section": "dashboard",
+      "language": "TR",
+      "heading": "Maison Lune · Genel bakış"
+    },
+    {
+      "kind": "brand",
+      "section": "products",
+      "language": "TR",
+      "heading": "Ürünler"
+    },
+    {
+      "kind": "brand",
+      "section": "stock-receiving",
+      "language": "TR",
+      "heading": "Stok kabulü"
+    },
+    {
+      "kind": "brand",
+      "section": "inventory",
+      "language": "TR",
+      "heading": "Envanter"
+    },
+    {
+      "kind": "brand",
+      "section": "transfers",
+      "language": "TR",
+      "heading": "Stok transferleri"
+    },
+    {
+      "kind": "brand",
+      "section": "branches",
+      "language": "TR",
+      "heading": "Şubeler"
+    },
+    {
+      "kind": "brand",
+      "section": "devices",
+      "language": "TR",
+      "heading": "Akıllı ayna cihazları"
+    },
+    {
+      "kind": "brand",
+      "section": "staff",
+      "language": "TR",
+      "heading": "Personel"
+    },
+    {
+      "kind": "brand",
+      "section": "analytics",
+      "language": "TR",
+      "heading": "Analitik"
+    },
+    {
+      "kind": "brand",
+      "section": "subscription",
+      "language": "TR",
+      "heading": "Abonelik"
+    },
+    {
+      "kind": "brand",
+      "section": "notifications",
+      "language": "TR",
+      "heading": "Bildirimler"
+    },
+    {
+      "kind": "brand",
+      "section": "integrations",
+      "language": "TR",
+      "heading": "Entegrasyonlar"
+    },
+    {
+      "kind": "brand",
+      "section": "settings",
+      "language": "TR",
+      "heading": "Marka ayarları"
+    },
+    {
+      "kind": "super-admin",
+      "section": "dashboard",
+      "language": "TR",
+      "heading": "Platform genel bakışı"
+    },
+    {
+      "kind": "super-admin",
+      "section": "brands",
+      "language": "TR",
+      "heading": "Markalar"
+    },
+    {
+      "kind": "super-admin",
+      "section": "applications",
+      "language": "TR",
+      "heading": "Marka başvuruları"
+    },
+    {
+      "kind": "super-admin",
+      "section": "branches",
+      "language": "TR",
+      "heading": "Platform şubeleri"
+    },
+    {
+      "kind": "super-admin",
+      "section": "campaigns",
+      "language": "TR",
+      "heading": "Platform kampanyaları"
+    },
+    {
+      "kind": "super-admin",
+      "section": "subscriptions",
+      "language": "TR",
+      "heading": "Platform abonelikleri"
+    },
+    {
+      "kind": "super-admin",
+      "section": "notifications",
+      "language": "TR",
+      "heading": "Bildirimler"
+    },
+    {
+      "kind": "super-admin",
+      "section": "audit-logs",
+      "language": "TR",
+      "heading": "Denetim kayıtları"
+    },
+    {
+      "kind": "super-admin",
+      "section": "settings",
+      "language": "TR",
+      "heading": "Platform ayarları"
+    },
+    {
+      "kind": "staff",
+      "section": "dashboard",
+      "language": "TR",
+      "heading": "Çalışma alanınız"
+    },
+    {
+      "kind": "staff",
+      "section": "products",
+      "language": "TR",
+      "heading": "Ürünler"
+    },
+    {
+      "kind": "staff",
+      "section": "stock-receiving",
+      "language": "TR",
+      "heading": "Stok kabulü"
+    },
+    {
+      "kind": "staff",
+      "section": "inventory",
+      "language": "TR",
+      "heading": "Envanter"
+    },
+    {
+      "kind": "staff",
+      "section": "devices",
+      "language": "TR",
+      "heading": "Cihazlar"
+    },
+    {
+      "kind": "staff",
+      "section": "analytics",
+      "language": "TR",
+      "heading": "Analitik"
+    },
+    {
+      "kind": "admin",
+      "section": "dashboard",
+      "language": "TR",
+      "heading": "Maison Lune · Genel bakış"
+    },
+    {
+      "kind": "admin",
+      "section": "products",
+      "language": "TR",
+      "heading": "Ürünler"
+    }
+  ],
+  "errors": [],
+  "leaks": []
+}

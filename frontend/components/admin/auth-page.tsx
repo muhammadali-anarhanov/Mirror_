@@ -1,6 +1,9 @@
 "use client"
 
+
+import { useText } from "@/components/marketing-language";
 import { useState, type FormEvent } from "react"
+import { LanguageSelector } from "@/components/marketing-language"
 import Link from "next/link"
 import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -33,6 +36,8 @@ const content: Record<AuthMode, { eyebrow: string; title: string; description: s
 }
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
+  const t = useText();
+
   const [feedback, setFeedback] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -52,7 +57,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       if (!response.ok) throw new Error(data.error || "Sign-in failed")
       setFeedback("Signed in. Your session is ready; admin modules that still show sample data remain previews.")
       // Keep preview consoles gated in production until their sample modules are migrated.
-      const liveCatalog = process.env.NEXT_PUBLIC_ENABLE_LIVE_CATALOG === "true" && data.user.role === "BRAND_ADMIN"
+      const liveCatalog = data.user.role === "BRAND_ADMIN"
       window.location.assign(liveCatalog ? "/brand/products" : process.env.NODE_ENV === "production" ? "/mirror" : dashboardPathForRole(data.user.role as PlatformRole))
     } catch (error) { setFeedback(error instanceof Error ? error.message : "Sign-in failed") }
   }
@@ -61,40 +66,41 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     <main className="mirror-auth-page" data-auth-mode={mode}>
       <section className="mirror-auth-panel" aria-labelledby="auth-title">
         <header className="mirror-auth-brand-row">
-          <Link href="/" className="mirror-auth-brand" aria-label="MIRROR platform home">
+          <Link href="/" className="mirror-auth-brand" aria-label={t("MIRROR platform home")}>
             <span className="mirror-auth-brand-mark" aria-hidden="true"><span /></span>
-            <span>MIRROR <small>/ PLATFORM</small></span>
+            <span>{t("MIRROR")}<small>{t("/ PLATFORM")}</small></span>
           </Link>
-          <span className="mirror-auth-secure"><ShieldCheck aria-hidden="true" /> Admin portal</span>
+          <LanguageSelector className="mirror-auth-language" />
+          <span className="mirror-auth-secure"><ShieldCheck aria-hidden="true" />{t("Admin portal")}</span>
         </header>
         <div className="mirror-auth-form-wrap">
-          <Link href="/mirror" className="mirror-auth-back"><ArrowLeft aria-hidden="true" /> Back to fitting room</Link>
+          <Link href="/mirror" className="mirror-auth-back"><ArrowLeft aria-hidden="true" />{t("Back to fitting room")}</Link>
           <div className="mirror-auth-form-heading">
-            <span className="mirror-auth-eyebrow">{copy.eyebrow}</span>
-            <h1 id="auth-title">{copy.title}</h1>
-            <p>{copy.description}</p>
+            <span className="mirror-auth-eyebrow">{t(copy.eyebrow)}</span>
+            <h1 id="auth-title">{t(copy.title)}</h1>
+            <p>{t(copy.description)}</p>
           </div>
           <div className="mirror-auth-api-note" role="status">
             <LockKeyhole aria-hidden="true" />
-            <span>{mode === "login" ? "Sign in securely through the MIRROR backend." : "Account recovery requires a configured email provider."}</span>
+            <span>{mode === "login" ? t("Sign in securely through the MIRROR backend.") : t("Account recovery requires a configured email provider.")}</span>
           </div>
 
           <form className="mirror-auth-form" onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="auth-email">Email address</FieldLabel>
-                <Input id="auth-email" type="email" name="email" autoComplete="email" placeholder="you@company.com" required disabled={mode !== "login"} />
+                <FieldLabel htmlFor="auth-email">{t("Email address")}</FieldLabel>
+                <Input id="auth-email" type="email" name="email" autoComplete="email" placeholder={t("you@company.com")} required disabled={mode !== "login"} />
               </Field>
               {mode !== "forgot" && (
                 <Field>
-                  <FieldLabel htmlFor="auth-password">{mode === "reset" ? "New password" : "Password"}</FieldLabel>
+                  <FieldLabel htmlFor="auth-password">{mode === "reset" ? t("New password") : t("Password")}</FieldLabel>
                   <div className="mirror-auth-password-field">
                     <Input
                       id="auth-password"
                       type="password"
                       name="password"
                       autoComplete={mode === "reset" ? "new-password" : "current-password"}
-                      placeholder={mode === "reset" ? "At least 12 characters" : "Enter your password"}
+                      placeholder={mode === "reset" ? t("At least 12 characters") : t("Enter your password")}
                       minLength={mode === "reset" ? 12 : undefined}
                       required
                       disabled={mode !== "login"}
@@ -106,13 +112,13 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               )}
               {mode === "reset" && (
                 <Field>
-                  <FieldLabel htmlFor="confirm-password">Confirm new password</FieldLabel>
+                  <FieldLabel htmlFor="confirm-password">{t("Confirm new password")}</FieldLabel>
                   <Input
                     id="confirm-password"
                     type="password"
                     name="confirmPassword"
                     autoComplete="new-password"
-                    placeholder="Re-enter your password"
+                    placeholder={t("Re-enter your password")}
                     minLength={12}
                     required
                     disabled
@@ -120,19 +126,19 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                   />
-                  {confirmPassword && password !== confirmPassword && <FieldDescription className="mirror-auth-error">Passwords do not match.</FieldDescription>}
+                  {confirmPassword && password !== confirmPassword && <FieldDescription className="mirror-auth-error">{t("Passwords do not match.")}</FieldDescription>}
                 </Field>
               )}
             </FieldGroup>
 
-            <Button type="submit" className="mirror-auth-submit" disabled={mode !== "login"}>{mode === "login" ? copy.submit : "Service unavailable"}</Button>
-            {feedback && <p className="mirror-auth-feedback" role="alert">{feedback}</p>}
+            <Button type="submit" className="mirror-auth-submit" disabled={mode !== "login"}>{mode === "login" ? t(copy.submit) : t("Service unavailable")}</Button>
+            {feedback && <p className="mirror-auth-feedback" role="alert">{t(feedback)}</p>}
           </form>
 
-          <p className="mirror-auth-security"><LockKeyhole aria-hidden="true" /> Sessions use secure server-managed cookies.</p>
-          {mode !== "login" && <Link href="/login" className="mirror-auth-back-link">Return to sign in</Link>}
+          <p className="mirror-auth-security"><LockKeyhole aria-hidden="true" />{t("Sessions use secure server-managed cookies.")}</p>
+          {mode !== "login" && <Link href="/login" className="mirror-auth-back-link">{t("Return to sign in")}</Link>}
         </div>
-        <footer className="mirror-auth-footer"><span>Need access? Contact your platform administrator.</span><span>Privacy&nbsp;&nbsp; · &nbsp;&nbsp;Terms</span></footer>
+        <footer className="mirror-auth-footer"><span>{t("Need access? Contact your platform administrator.")}</span><span>{t("Privacy · Terms")}</span></footer>
       </section>
     </main>
   )

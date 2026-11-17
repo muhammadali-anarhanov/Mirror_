@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useText } from "@/components/marketing-language";
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -20,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ADMIN_SECTION_DEFINITIONS } from "@/lib/admin/admin-catalog"
+import { LanguageSelector, useMarketingLanguage } from "@/components/marketing-language"
 import { ADMIN_LOCALES, localeDirection, translate, type AdminLocale } from "@/lib/admin/i18n"
 
 export type ConsoleKind = "super-admin" | "admin" | "brand" | "staff"
@@ -92,10 +95,14 @@ function roleName(role: RolePreview) {
 }
 
 export function AdminConsole({ kind, section }: { kind: ConsoleKind; section: string }) {
+  const t = useText();
+
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [period, setPeriod] = useState("30d")
-  const [language, setLanguage] = useState<AdminLocale>("en")
+  const sharedLanguage = useMarketingLanguage()
+  const language = sharedLanguage.language.toLowerCase() as AdminLocale
+  const setLanguage = (value: AdminLocale) => sharedLanguage.setLanguage(value.toUpperCase() as typeof sharedLanguage.language)
   const [rolePreview] = useState<RolePreview>("BRAND_ADMIN")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -114,12 +121,6 @@ export function AdminConsole({ kind, section }: { kind: ConsoleKind; section: st
   const scopeLabel = kind === "super-admin" ? "Platform workspace" : kind === "staff" || rolePreview === "STAFF" ? "Assigned branch · Le Marais" : rolePreview === "STORE_ADMIN" ? "Le Marais · Branch" : rolePreview === "ANALYST_MANAGER" ? "Maison Lune · Analytics" : "Maison Lune · Brand"
   const localeQuery = `?lang=${language}`
   const isRTL = localeDirection(language) === "rtl"
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const savedLanguage = params.get("lang")
-    if (savedLanguage && ADMIN_LOCALES.some((locale) => locale.value === savedLanguage)) setLanguage(savedLanguage as AdminLocale)
-  }, [])
 
   useEffect(() => {
     const mobileViewport = window.matchMedia("(max-width: 800px)")
@@ -146,27 +147,27 @@ export function AdminConsole({ kind, section }: { kind: ConsoleKind; section: st
 
   return (
     <div className="mirror-admin" data-console-kind={kind} lang={language} dir={isRTL ? "rtl" : "ltr"}>
-      {mobileNavOpen && <button type="button" className="mirror-admin-mobile-scrim" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />}
-      <aside id="mirror-admin-sidebar" className={`mirror-admin-sidebar${mobileNavOpen ? " is-open" : ""}`} aria-label="Administration navigation" aria-hidden={isMobile && !mobileNavOpen} inert={isMobile && !mobileNavOpen}>
+      {mobileNavOpen && <button type="button" className="mirror-admin-mobile-scrim" aria-label={t("Close navigation")} onClick={() => setMobileNavOpen(false)} />}
+      <aside id="mirror-admin-sidebar" className={`mirror-admin-sidebar${mobileNavOpen ? " is-open" : ""}`} aria-label={t("Administration navigation")} aria-hidden={isMobile && !mobileNavOpen} inert={isMobile && !mobileNavOpen}>
         <div className="mirror-admin-brand-row">
-          <Link href={`/mirror`} className="mirror-admin-brand" aria-label="MIRROR fitting room home">
+          <Link href={`/mirror`} className="mirror-admin-brand" aria-label={t("MIRROR fitting room home")}>
             <span className="mirror-admin-brand-mark" aria-hidden="true"><span /></span>
-            <span className="mirror-admin-brand-word">MIRROR<span> / {kind === "super-admin" ? "PLATFORM" : "ADMIN"}</span></span>
+            <span className="mirror-admin-brand-word">{t("MIRROR")}<span> / {kind === "super-admin" ? t("PLATFORM") : t("ADMIN")}</span></span>
           </Link>
-          <Button className="mirror-admin-mobile-close" variant="ghost" size="icon" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)}><X aria-hidden="true" /></Button>
+          <Button className="mirror-admin-mobile-close" variant="ghost" size="icon" aria-label={t("Close navigation")} onClick={() => setMobileNavOpen(false)}><X aria-hidden="true" /></Button>
         </div>
         <div className="mirror-admin-workspace-label">
           <span className="mirror-admin-workspace-icon"><Shield aria-hidden="true" /></span>
-          <span><strong>{kind === "super-admin" ? "MIRROR Platform" : "Maison Lune"}</strong><small>{scopeLabel}</small></span>
+          <span><strong>{kind === "super-admin" ? t("MIRROR Platform") : t("Maison Lune")}</strong><small>{t(scopeLabel)}</small></span>
           <ChevronDown aria-hidden="true" />
         </div>
-        <nav className="mirror-admin-nav" aria-label="Workspace sections">
+        <nav className="mirror-admin-nav" aria-label={t("Workspace sections")}>
           {(["Daily operations", "Catalog & mirrors", "Management"] as NavigationGroup[]).map((group) => {
             const groupItems = navigation.filter((item) => item.group === group)
             if (!groupItems.length) return null
             return (
               <div className="mirror-admin-nav-group" key={group}>
-                <span className="mirror-admin-nav-caption">{group}</span>
+                <span className="mirror-admin-nav-caption">{t(group)}</span>
                 {groupItems.map((item) => {
                   const Icon = item.icon
                   const itemLabel = translate(language, `nav.${translationKey(item.key)}`) || item.label
@@ -184,19 +185,19 @@ export function AdminConsole({ kind, section }: { kind: ConsoleKind; section: st
           })}
         </nav>
         <div className="mirror-admin-sidebar-bottom">
-          <div className="mirror-admin-help-card"><span className="mirror-admin-help-icon"><LifeBuoy aria-hidden="true" /></span><div><strong>Need a hand?</strong><span>Preview support center</span></div></div>
+          <div className="mirror-admin-help-card"><span className="mirror-admin-help-icon"><LifeBuoy aria-hidden="true" /></span><div><strong>{t("Need a hand?")}</strong><span>{t("Preview support center")}</span></div></div>
           <div className="mirror-admin-user-card">
-            <Avatar className="mirror-admin-avatar"><AvatarFallback>{kind === "super-admin" ? "MA" : kind === "staff" ? "LD" : rolePreview === "STORE_ADMIN" ? "SM" : "AL"}</AvatarFallback></Avatar>
-            <span className="mirror-admin-user-copy"><strong>{kind === "super-admin" ? "M. Anarhanov" : kind === "staff" ? "Lea Dubois" : rolePreview === "STORE_ADMIN" ? "Sofia Martin" : "Amira Laurent"}</strong><small>{roleLabel}</small></span>
+            <Avatar className="mirror-admin-avatar"><AvatarFallback>{kind === "super-admin" ? t("MA") : kind === "staff" ? t("LD") : rolePreview === "STORE_ADMIN" ? t("SM") : t("AL")}</AvatarFallback></Avatar>
+            <span className="mirror-admin-user-copy"><strong>{kind === "super-admin" ? t("M. Anarhanov") : kind === "staff" ? t("Lea Dubois") : rolePreview === "STORE_ADMIN" ? t("Sofia Martin") : t("Amira Laurent")}</strong><small>{t(roleLabel)}</small></span>
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Open profile menu" />}><ChevronDown aria-hidden="true" /></DropdownMenuTrigger>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("Open profile menu")} />}><ChevronDown aria-hidden="true" /></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="mirror-admin-profile-menu">
-                <DropdownMenuGroup><DropdownMenuLabel>{kind === "super-admin" ? "M. Anarhanov" : kind === "staff" ? "Lea Dubois" : "Amira Laurent"}</DropdownMenuLabel><DropdownMenuLabel className="mirror-admin-profile-email">{kind === "super-admin" ? "platform@mirror.example" : "amira@maisonlune.example"}</DropdownMenuLabel></DropdownMenuGroup>
+                <DropdownMenuGroup><DropdownMenuLabel>{kind === "super-admin" ? t("M. Anarhanov") : kind === "staff" ? t("Lea Dubois") : t("Amira Laurent")}</DropdownMenuLabel><DropdownMenuLabel className="mirror-admin-profile-email">{kind === "super-admin" ? t("platform@mirror.example") : t("amira@maisonlune.example")}</DropdownMenuLabel></DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigateTo("/reset-password")}>Change password</DropdownMenuItem>
-                {kind !== "staff" && <DropdownMenuItem onClick={() => navigateTo(`${basePath}/settings`)}>Account settings</DropdownMenuItem>}
+                <DropdownMenuItem onClick={() => navigateTo("/reset-password")}>{t("Change password")}</DropdownMenuItem>
+                {kind !== "staff" && <DropdownMenuItem onClick={() => navigateTo(`${basePath}/settings`)}>{t("Account settings")}</DropdownMenuItem>}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={async () => { await apiFetch("/auth/logout", { method: "POST" }); navigateTo("/login") }}>Sign out / exit preview</DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={async () => { await apiFetch("/auth/logout", { method: "POST" }); navigateTo("/login") }}>{t("Sign out / exit preview")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -206,23 +207,23 @@ export function AdminConsole({ kind, section }: { kind: ConsoleKind; section: st
       <div className="mirror-admin-main">
         <header className="mirror-admin-topbar">
           <div className="mirror-admin-topbar-left">
-            <Button className="mirror-admin-mobile-menu" variant="ghost" size="icon" aria-label="Open navigation" aria-expanded={mobileNavOpen} aria-controls="mirror-admin-sidebar" onClick={() => setMobileNavOpen(true)}><Menu aria-hidden="true" /></Button>
+            <Button className="mirror-admin-mobile-menu" variant="ghost" size="icon" aria-label={t("Open navigation")} aria-expanded={mobileNavOpen} aria-controls="mirror-admin-sidebar" onClick={() => setMobileNavOpen(true)}><Menu aria-hidden="true" /></Button>
             <div className="mirror-admin-breadcrumb"><span>{translate(language, "common.workspace")}</span><span aria-hidden="true">/</span><strong>{title}</strong></div>
           </div>
           <div className="mirror-admin-topbar-actions">
-            <label className="mirror-admin-search"><Search aria-hidden="true" /><input ref={searchRef} aria-label={translate(language, "common.search")} placeholder={translate(language, "common.search")} value={query} onChange={(event) => setQuery(event.target.value)} /><kbd>⌘ K</kbd></label>
-            <div className="mirror-admin-period-select"><Select value={period} onValueChange={(value) => setPeriod(value ?? "30d")}><SelectTrigger aria-label="Select date range"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem value="today">Today</SelectItem><SelectItem value="7d">7 days</SelectItem><SelectItem value="30d">30 days</SelectItem><SelectItem value="90d">90 days</SelectItem><SelectItem value="custom">Custom range</SelectItem></SelectGroup></SelectContent></Select></div>
-            <Select value={language} onValueChange={(value) => { if (!value) return; const nextLocale = value as AdminLocale; setLanguage(nextLocale); router.replace(`${basePath}/${effectiveSection}?lang=${nextLocale}`) }}><SelectTrigger className="mirror-admin-language" aria-label="Choose language"><SelectValue /></SelectTrigger><SelectContent><SelectGroup>{ADMIN_LOCALES.map((locale) => <SelectItem key={locale.value} value={locale.value}>{locale.value.toUpperCase()}</SelectItem>)}</SelectGroup></SelectContent></Select>
-            <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="mirror-admin-notifications" aria-label="Notifications" />}><Bell aria-hidden="true" /><span className="mirror-admin-notification-dot" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="mirror-admin-notification-menu"><DropdownMenuLabel>Notifications</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuItem onClick={() => navigateTo(`${basePath}/notifications`)}>12 variants are below the low-stock threshold</DropdownMenuItem><DropdownMenuItem onClick={() => navigateTo(kind === "super-admin" ? "/super-admin/applications" : `${basePath}/devices`)}>A smart mirror needs attention</DropdownMenuItem><DropdownMenuItem onClick={() => navigateTo(`${basePath}/notifications`)}>View all notifications</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+            <label className="mirror-admin-search"><Search aria-hidden="true" /><input ref={searchRef} aria-label={translate(language, t("common.search"))} placeholder={translate(language, t("common.search"))} value={query} onChange={(event) => setQuery(event.target.value)} /><kbd>{t("⌘ K")}</kbd></label>
+            <div className="mirror-admin-period-select"><Select value={period} onValueChange={(value) => setPeriod(value ?? "30d")}><SelectTrigger aria-label={t("Select date range")}><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem value="today">{t("Today")}</SelectItem><SelectItem value="7d">{t("7 days")}</SelectItem><SelectItem value="30d">{t("30 days")}</SelectItem><SelectItem value="90d">{t("90 days")}</SelectItem><SelectItem value="custom">{t("Custom range")}</SelectItem></SelectGroup></SelectContent></Select></div>
+            <LanguageSelector className="mirror-admin-language" />
+            <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="mirror-admin-notifications" aria-label={t("Notifications")} />}><Bell aria-hidden="true" /><span className="mirror-admin-notification-dot" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="mirror-admin-notification-menu"><DropdownMenuLabel>{t("Notifications")}</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuItem onClick={() => navigateTo(`${basePath}/notifications`)}>{t("12 variants are below the low-stock threshold")}</DropdownMenuItem><DropdownMenuItem onClick={() => navigateTo(kind === "super-admin" ? "/super-admin/applications" : `${basePath}/devices`)}>{t("A smart mirror needs attention")}</DropdownMenuItem><DropdownMenuItem onClick={() => navigateTo(`${basePath}/notifications`)}>{t("View all notifications")}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
           </div>
         </header>
 
         <main className="mirror-admin-content">
-          <div className="mirror-admin-demo-banner" role="status"><span className="mirror-admin-demo-pulse" aria-hidden="true" /><strong>{translate(language, "common.demo")}</strong><span>Sample data only. Most admin modules remain previews. Live catalog, when enabled, saves through the Go API.</span>{isBrandConsole && <Badge variant="outline" className="mirror-admin-role-badge">{roleLabel}</Badge>}</div>
-          {isBrandConsole && rolePreview === "STORE_ADMIN" && <p className="mirror-admin-scope-note">Store scope preview: Le Marais. This is a visual role simulation, not an authenticated session.</p>}
-          {(isBrandConsole && (rolePreview === "ANALYST_MANAGER" || rolePreview === "CUSTOM_ROLE")) && <p className="mirror-admin-scope-note">Module visibility is illustrative and must be enforced by a backend before production use.</p>}
+          <div className="mirror-admin-demo-banner" role="status"><span className="mirror-admin-demo-pulse" aria-hidden="true" /><strong>{translate(language, "common.demo")}</strong><span>{t("Sample data only. Most admin modules remain previews. Live catalog, when enabled, saves through the Go API.")}</span>{isBrandConsole && <Badge variant="outline" className="mirror-admin-role-badge">{t(roleLabel)}</Badge>}</div>
+          {isBrandConsole && rolePreview === "STORE_ADMIN" && <p className="mirror-admin-scope-note">{t("Store scope preview: Le Marais. This is a visual role simulation, not an authenticated session.")}</p>}
+          {(isBrandConsole && (rolePreview === "ANALYST_MANAGER" || rolePreview === "CUSTOM_ROLE")) && <p className="mirror-admin-scope-note">{t("Module visibility is illustrative and must be enforced by a backend before production use.")}</p>}
           <AdminContent kind={kind} section={effectiveSection} searchTerm={query} period={period} rolePreview={rolePreview} localeQuery={localeQuery} />
-          <footer className="mirror-admin-footer"><span>© 2026 MIRROR Platform</span><span>Frontend prototype · data resets on refresh</span></footer>
+          <footer className="mirror-admin-footer"><span>{t("© 2026 MIRROR Platform")}</span><span>{t("Frontend prototype · data resets on refresh")}</span></footer>
         </main>
       </div>
     </div>

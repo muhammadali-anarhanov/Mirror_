@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useText } from "@/components/marketing-language";
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
@@ -14,6 +16,8 @@ const slideImages = [
 ];
 
 export function MirrorProjectSection({ copy }: { copy: PortfolioCopy["mirror"] }) {
+  const t = useText();
+
   const [activeSlide, setActiveSlide] = useState(0);
   const sectionRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
@@ -26,13 +30,13 @@ export function MirrorProjectSection({ copy }: { copy: PortfolioCopy["mirror"] }
         <div className="portfolio-container">
           <Reveal className="portfolio-mirror-heading">
             <div>
-              <p className="portfolio-eyebrow portfolio-eyebrow-lime">{copy.eyebrow}</p>
-              <h2 id="mirror-title">{copy.title}</h2>
-              <p className="portfolio-mirror-description">{copy.description}</p>
+              <p className="portfolio-eyebrow portfolio-eyebrow-lime">{t(copy.eyebrow)}</p>
+              <h2 id="mirror-title">{t(copy.title)}</h2>
+              <p className="portfolio-mirror-description">{t(copy.description)}</p>
             </div>
             <div className="portfolio-mirror-status">
               <span className="portfolio-mirror-status-dot" aria-hidden="true" />
-              <span><small>{copy.statusLabel}</small><strong>{copy.status}</strong></span>
+              <span><small>{copy.statusLabel}</small><strong>{t(copy.status)}</strong></span>
             </div>
           </Reveal>
 
@@ -40,7 +44,7 @@ export function MirrorProjectSection({ copy }: { copy: PortfolioCopy["mirror"] }
             <Reveal className="portfolio-mirror-visual" delay={0.07}>
               <motion.div className="portfolio-mirror-device" style={reduceMotion ? undefined : { y: imageY }}>
                 <div className="portfolio-device-topbar">
-                  <span className="portfolio-device-brand"><span className="portfolio-device-mark">M</span>MIRROR</span>
+                  <span className="portfolio-device-brand"><span className="portfolio-device-mark">{t("M")}</span>{t("MIRROR")}</span>
                   <span className="portfolio-device-indicator"><i aria-hidden="true" />{copy.previewLabel}</span>
                 </div>
                 <div className="portfolio-device-screen" id="mirror-preview-panel" aria-live="polite">
@@ -64,12 +68,12 @@ export function MirrorProjectSection({ copy }: { copy: PortfolioCopy["mirror"] }
                   </AnimatePresence>
                   <div className="portfolio-device-screen-shade" aria-hidden="true" />
                   <div className="portfolio-device-overlay">
-                    <span className="portfolio-device-pill"><CircleDashed aria-hidden="true" />{copy.status}</span>
+                    <span className="portfolio-device-pill"><CircleDashed aria-hidden="true" />{t(copy.status)}</span>
                     <span className="portfolio-device-caption">{copy.slidesLabel[activeSlide]}</span>
                   </div>
                   <div className="portfolio-device-product-card">
                     <span className="portfolio-device-product-dot" aria-hidden="true" />
-                    <span><small>MIRROR / PREVIEW</small><strong>{copy.slidesLabel[activeSlide]}</strong></span>
+                    <span><small>{t("MIRROR / PREVIEW")}</small><strong>{copy.slidesLabel[activeSlide]}</strong></span>
                     <MoveUpRight aria-hidden="true" />
                   </div>
                 </div>

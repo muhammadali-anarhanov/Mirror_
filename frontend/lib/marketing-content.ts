@@ -13,148 +13,148 @@ export type MarketingPageContent = {
 
 export const marketingPages: Record<string, MarketingPageContent> = {
   "how-it-works": {
-    eyebrow: "Qanday ishlaydi",
-    title: "Sinashdan xaridgacha — sodda yo‘l",
+    eyebrow: "How it works",
+    title: "From trying on to shopping — a simple path",
     description:
-      "MIRROR raqamli katalog va jismoniy do‘kon tajribasini bir joyga olib keladi. Xaridor ko‘radi, sinaydi va keyingi qadamni o‘zi tanlaydi.",
+      "MIRROR brings digital catalogs and physical stores together. Shoppers browse, try on and choose their next step.",
     sections: [
       {
-        title: "Katalogni tayyorlang",
-        body: "Mahsulot, variant va narx ma’lumotlarini brend katalogidan boshqaring. Mahsulot tasvirlari haqiqiy katalog ma’lumotlariga bog‘lanadi.",
-        bullets: ["Mahsulot va variantlar", "Haqiqiy narx hamda mavjudlik", "Brendga mos taqdimot"],
+        title: "Prepare your catalog",
+        body: "Manage products, variants and prices in your brand catalog. Product images are linked to real catalog data.",
+        bullets: ["Products and variants", "Real prices and availability", "Presentation that fits your brand"],
       },
       {
-        title: "Virtual oynada ko‘ring",
-        body: "Xaridor kategoriya bo‘yicha tanlaydi va kamera ishlatilishidan oldin ruxsat beradi. Interfeys telefon, planshet va do‘kon kioski uchun moslashadi.",
-        bullets: ["Kamera faqat tanlovdan keyin yoqiladi", "Ro‘yxatdan o‘tish majburiy emas", "Til va ekran yo‘nalishiga mos UI"],
+        title: "Explore the virtual mirror",
+        body: "Shoppers choose a category and grant permission before using the camera. The interface adapts to phones, tablets and store kiosks.",
+        bullets: ["Camera starts only after your choice", "Registration is optional", "Language and screen direction support"],
       },
       {
-        title: "Do‘kon bilan davom eting",
-        body: "MIRROR katalogdagi mahsulot tafsilotlarini va filial bo‘yicha mavjudlikni ko‘rsatish uchun mo‘ljallangan. Xarid yo‘li do‘kon jarayoningizga mos sozlanadi.",
-        bullets: ["Filial bo‘yicha mahsulot ko‘rinishi", "Xaridga o‘tish uchun aniq CTA", "Jamoa uchun boshqaruv paneli"],
+        title: "Continue in store",
+        body: "MIRROR displays catalog details and availability by branch. The shopping flow can be adapted to your store operations.",
+        bullets: ["Product view by branch", "Clear next step to purchase", "Management dashboard for your team"],
       },
     ],
   },
   features: {
-    eyebrow: "Imkoniyatlar",
-    title: "Sinov xonasi va retail boshqaruvi — yagona tajribada",
+    eyebrow: "Features",
+    title: "Fitting room and retail management in one experience",
     description:
-      "MIRROR xaridor interfeysi bilan brend va do‘kon jamoalarining kundalik ishini bog‘lash uchun ishlab chiqilmoqda.",
+      "MIRROR connects the shopper interface with the daily work of brand and store teams.",
     sections: [
       {
-        title: "Virtual kiyib ko‘rish",
-        body: "Kiyim, poyabzal va aksessuarlarni vizual ko‘rib chiqish uchun mo‘ljallangan kiosk interfeysi.",
-        bullets: ["Landscape va portrait ekranlar", "Kamera ruxsati va xatolik holatlari", "Kategoriya va variant tanlovi"],
+        title: "Virtual try-on",
+        body: "A kiosk interface for visually exploring clothing, footwear and accessories.",
+        bullets: ["Landscape and portrait screens", "Camera permission and error states", "Category and variant selection"],
       },
       {
-        title: "Mahsulot va zaxira",
-        body: "Mahsulot, variant, filial biriktiruvi va zaxira ma’lumotlarini yagona katalogda boshqarish imkoniyati.",
-        bullets: ["Variant va SKU ma’lumotlari", "Filial kesimidagi mavjudlik", "Mahsulot holati va o‘zgarish tarixi"],
+        title: "Products and inventory",
+        body: "Manage products, variants, branch assignments and stock in a single catalog.",
+        bullets: ["Variant and SKU information", "Availability by branch", "Product status and change history"],
       },
       {
-        title: "Jamoa boshqaruvi",
-        body: "Brand, store va staff rollari uchun alohida ish maydonlari hamda ruxsatlar bilan kengaytiriladigan boshqaruv.",
-        bullets: ["Rolga mos ish maydoni", "Filial doirasida cheklangan ko‘rinish", "Muhim amallar uchun audit izi"],
+        title: "Team management",
+        body: "Dedicated workspaces for brand, store and staff roles with extensible permissions.",
+        bullets: ["Role-specific workspace", "Branch-scoped access", "Audit trail for important actions"],
       },
     ],
   },
   "for-brands": {
-    eyebrow: "Brendlar uchun",
-    title: "Brend tajribasini do‘konning o‘zida davom ettiring",
+    eyebrow: "For brands",
+    title: "Bring your brand experience into the store",
     description:
-      "MIRROR brend katalogi, virtual kiyib ko‘rish va filialdagi mahsulot ma’lumotlarini bir oqimda birlashtirishga yordam beradi.",
+      "MIRROR brings your brand catalog, virtual fitting and branch product information into one flow.",
     sections: [
       {
-        title: "Brendingizga mos ko‘rinish",
-        body: "Kiosk va mahsulot taqdimoti brend identifikatsiyasiga mos sozlanishi mumkin. Xaridor e’tibori mahsulotning o‘zida qoladi.",
-        bullets: ["Brend nomi va katalogi", "Mahsulot tafsilotlari", "Mobil va kiosk ekranlari"],
+        title: "A look that matches your brand",
+        body: "Kiosk and product presentation can match your brand identity while keeping shoppers focused on the product.",
+        bullets: ["Brand name and catalog", "Product details", "Mobile and kiosk screens"],
       },
       {
-        title: "Filiallarni tartibli boshqaring",
-        body: "Brend ichidagi filiallar va qurilmalar uchun alohida ko‘rinish, mahsulot biriktiruvi va operatsion holatni rejalashtiring.",
-        bullets: ["Filial bo‘yicha assortiment", "Qurilma va filial holati", "Jamoa rollari uchun kengaytiriladigan model"],
+        title: "Keep branches organized",
+        body: "Plan branch and device views, product assignments and operational status within your brand.",
+        bullets: ["Assortment by branch", "Device and branch status", "Extensible team roles"],
       },
     ],
   },
   pricing: {
-    eyebrow: "Tariflar",
-    title: "Biznesingiz ko‘lamiga mos yondashuv",
+    eyebrow: "Pricing",
+    title: "An approach that fits your business scale",
     description:
-      "Filiallar, qurilmalar va kerakli imkoniyatlar har bir biznesda farq qiladi. Shu sababli narxni real ehtiyojlar asosida muhokama qilamiz.",
+      "Every business has different branches, devices and feature needs. Pricing is discussed around your actual requirements.",
     sections: [
       {
-        title: "Avval ehtiyojni aniqlaymiz",
-        body: "Demo davomida joriy katalog, do‘konlar va ish jarayonini ko‘rib chiqamiz. Hech qanday tasdiqlanmagan narx yoki limit ko‘rsatilmaydi.",
-        bullets: ["Filial va qurilmalar soni", "Katalog va zaxira talablari", "Joriy tizimlar bilan ishlash ehtiyoji"],
+        title: "Start with your needs",
+        body: "During the demo we review your catalog, stores and workflows. We do not show unconfirmed prices or limits.",
+        bullets: ["Number of branches and devices", "Catalog and inventory requirements", "Integration with existing systems"],
       },
       {
-        title: "Aniq taklif, shaffof tarkib",
-        body: "Sizga mos taklif funksiyalar, qo‘llab-quvvatlash va joriy etish doirasini aniq bayon qiladi.",
-        bullets: ["Oldindan kelishilgan doira", "Qo‘shimcha talablarni alohida muhokama qilish", "Demo so‘rovi bepul"],
+        title: "A clear proposal with transparent scope",
+        body: "Your proposal clearly describes features, support and implementation scope.",
+        bullets: ["Agreed scope in advance", "Discuss additional requirements separately", "Demo requests are free"],
       },
     ],
   },
   "privacy-security": {
-    eyebrow: "Maxfiylik va xavfsizlik",
-    title: "Ishonch — tajribaning bir qismi",
+    eyebrow: "Privacy and security",
+    title: "Trust is part of the experience",
     description:
-      "Kamera, akkaunt va shaxsiy ma’lumotlar haqida tanlov foydalanuvchining o‘zida bo‘lishi kerak. MIRROR tajribasi shu tamoyil bilan quriladi.",
+      "Users should control decisions about cameras, accounts and personal data. MIRROR is built around this principle.",
     sections: [
       {
-        title: "Kamera ruxsati sizdan boshlanadi",
-        body: "Kamera ruxsati so‘ralishidan oldin foydalanuvchiga nima uchun kerakligi tushuntiriladi. Ruxsat berilmasa ham sahifani ko‘rish mumkin.",
-        bullets: ["Kamera faqat foydalanuvchi tanlaganda ishga tushadi", "Kamera mavjud bo‘lmagan holat uchun alohida yo‘l", "Rozilikni istalgan payt bekor qilish mumkin"],
+        title: "Camera permission starts with you",
+        body: "We explain why the camera is needed before requesting permission. You can browse the page even if you decline.",
+        bullets: ["Camera starts only when the user chooses", "An alternative when no camera is available", "You can withdraw consent at any time"],
       },
       {
-        title: "Faqat zarur ma’lumot",
-        body: "Demo so‘rovida yuborilgan aloqa ma’lumotlari so‘rovni ko‘rib chiqish uchun ishlatiladi. Maxfiylik siyosati ma’lumotlardan foydalanish va saqlash tartibini belgilaydi.",
-        bullets: ["So‘rov shaklida aniq maqsad", "Kirishlar serverda tekshiriladi", "Ma’muriy amallar audit tarixiga yoziladi"],
+        title: "Only necessary information",
+        body: "Contact details submitted with a demo request are used to review it. Our privacy policy explains data use and retention.",
+        bullets: ["A clear purpose for the request form", "Inputs are validated on the server", "Administrative actions have an audit trail"],
       },
     ],
   },
   about: {
-    eyebrow: "Biz haqimizda",
-    title: "Do‘kondagi tanlovni yanada aniqroq qilish uchun",
+    eyebrow: "About us",
+    title: "Helping shoppers make clearer choices in store",
     description:
-      "MIRROR — moda chakana savdosi uchun virtual kiyib ko‘rish va operatsion boshqaruv platformasi.",
+      "MIRROR is a virtual fitting and operations platform for fashion retail.",
     sections: [
       {
-        title: "Mahsulot birinchi o‘rinda",
-        body: "Texnologiya xaridorga mahsulotni yaxshiroq tushunishga yordam berishi kerak. MIRROR do‘kon tajribasini murakkablashtirmasdan, ko‘rish va tanlash jarayonini soddalashtirishga qaratilgan.",
+        title: "The product comes first",
+        body: "Technology should help shoppers understand products. MIRROR simplifies browsing and choosing without complicating the store experience.",
       },
       {
-        title: "Xaridor va jamoa uchun",
-        body: "Xaridor virtual sinov xonasidan foydalanadi, jamoa esa katalog, variant va filial ma’lumotlarini tartibli boshqarish uchun yagona ish maydoniga ega bo‘ladi.",
+        title: "For shoppers and teams",
+        body: "Shoppers use the virtual fitting room while teams organize catalogs, variants and branch information in one workspace.",
       },
     ],
   },
   faq: {
-    eyebrow: "Savol-javob",
-    title: "MIRROR haqida ko‘p beriladigan savollar",
-    description: "Virtual fitting, maxfiylik, mahsulot katalogi va demo jarayoni haqida qisqa javoblar.",
+    eyebrow: "FAQ",
+    title: "Frequently asked questions about MIRROR",
+    description: "Short answers about virtual fitting, privacy, catalogs and demos.",
     sections: [],
   },
 };
 
 export const faqItems = [
   {
-    question: "Virtual oynani ishlatish uchun akkaunt kerakmi?",
-    answer: "Yo‘q. Virtual oynani ko‘rish va katalogni sinash uchun akkaunt talab qilinmaydi.",
+    question: "Do I need an account to use the virtual mirror?",
+    answer: "No account is needed to explore the mirror and browse the catalog. AI generation and shopping actions require an appropriate session.",
   },
   {
-    question: "Kamera qachon yoqiladi?",
-    answer: "Kamera faqat foydalanuvchi ruxsat berish tugmasini bosgandan keyin yoqiladi. Ruxsat rad etilsa, kamera talab qilmaydigan holat ko‘rsatiladi.",
+    question: "When does the camera turn on?",
+    answer: "The camera starts only after the user chooses and grants permission. If permission is denied, a camera-free state is shown.",
   },
   {
-    question: "Mahsulot narxi yoki mavjudligi qayerdan olinadi?",
-    answer: "Mahsulot ma’lumoti brend katalogi va filial ma’lumotlariga bog‘lanadi. Demo vaqtida joriy ma’lumot manbalaringizni muhokama qilamiz.",
+    question: "Where do product prices and availability come from?",
+    answer: "Product data comes from the brand catalog and branch information. We can discuss your current data sources during the demo.",
   },
   {
-    question: "Narxlar qanday belgilanadi?",
-    answer: "Narx filiallar, qurilmalar va kerakli imkoniyatlarga qarab kelishiladi. Saytda tasdiqlanmagan narxlar ko‘rsatilmaydi.",
+    question: "How is pricing determined?",
+    answer: "Pricing depends on branches, devices and required features. We do not publish unconfirmed prices.",
   },
   {
-    question: "Demo qanday so‘raladi?",
-    answer: "Demo sahifasidagi qisqa shaklni yuboring. Jamoa so‘rovingizni ko‘rib chiqib, siz bilan bog‘lanadi.",
+    question: "How do I request a demo?",
+    answer: "Submit the short form on the demo page. Our team will review your request and contact you.",
   },
 ];

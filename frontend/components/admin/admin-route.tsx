@@ -7,8 +7,9 @@ import { cookies } from "next/headers"
 
 export async function AdminRoute({ kind, section }: { kind: ConsoleKind; section: string }) {
   if (process.env.NODE_ENV === "production") {
+    if (["brand", "admin"].includes(kind) && section === "dashboard") redirect("/brand/products")
     // Open only the connected catalog. Sample dashboard/workflow pages stay gated.
-    if (!process.env.BACKEND_URL || process.env.NEXT_PUBLIC_ENABLE_LIVE_CATALOG !== "true" || section !== "products" || !["brand", "admin"].includes(kind)) redirect("/login")
+    if (!process.env.BACKEND_URL || section !== "products" || !["brand", "admin"].includes(kind)) redirect("/login")
     const cookie = (await cookies()).toString()
     let authorized = false
     try {
