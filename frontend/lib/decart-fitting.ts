@@ -21,6 +21,8 @@ function safeDetail(error: unknown): string {
   return text ? `: ${text}` : "";
 }
 
+export const CLOCK_MESSAGE = "This device's clock is wrong, so Decart rejects the fitting token as expired. Turn on automatic date and time (Windows: Settings → Time & language → Set time automatically → Sync now), reload the page and start again.";
+
 // Provider errors can include URLs/tokens. Surface only safe SDK codes.
 export function decartError(error: unknown): string {
   const name = (error as {name?: unknown})?.name;
@@ -29,6 +31,7 @@ export function decartError(error: unknown): string {
   if (name === "NotReadableError") return "Camera is unavailable or in use by another application. Release it and start again.";
   if (name === "TypeError") return "Network or camera request failed. Check your connection and use HTTPS or localhost.";
   const code = (error as {code?: unknown})?.code;
+  if (code === "TOKEN_EXPIRED") return CLOCK_MESSAGE;
   return typeof code === "string" && /^[A-Z][A-Z0-9_]{1,60}$/.test(code)
     ? `Decart error: ${code}. Check model access, billing and network, then start again.`
     : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name}${safeDetail(error)})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
@@ -111,6 +114,10 @@ export class DecartFittingSession {
       const serverLifetime = Date.parse(token.expiresAt) - Date.parse(response.headers.get("Date") || "");
       const lifetime = Number.isFinite(serverLifetime) && serverLifetime > 0 ? Math.min(serverLifetime, SESSION_SECONDS * 1000) : SESSION_SECONDS * 1000;
       const tokenExpiry = Date.now() + lifetime;
+      // The Decart SDK refuses a token whose expiry is already past by this device's clock
+      // (TOKEN_EXPIRED). Detect a fast clock before any billable connection and say so plainly.
+      const exp = Date.parse(token.expiresAt);
+      if (Number.isFinite(exp) && exp - Date.now() < 5000) { this.fail(CLOCK_MESSAGE); return; }
       const client = sdk.createDecartClient({logger: sdk.noopLogger, telemetry: false, apiKeyProvider: async () => {
         if (epoch !== this.epoch || !(tokenExpiry - 2000 > Date.now())) throw new Error("Explicit restart required");
         return token.apiKey;
