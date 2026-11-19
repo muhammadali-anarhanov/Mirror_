@@ -30,7 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { useMarketingLanguage } from "./marketing-language";
-import { MirrorLiveFitting } from "./mirror-live-fitting";
+import { MirrorLiveFitting, type MirrorLiveFittingHandle } from "./mirror-live-fitting";
 import {
   mirrorColorTranslations,
   mirrorInterfaceCopy,
@@ -312,6 +312,10 @@ export default function MirrorRoom() {
   const [cartSyncError, setCartSyncError] = useState<MirrorCopyKey | "">("");
   const [cartNotice, setCartNotice] = useState<MirrorCopyKey | "">("");
   const languageMenuRef = useRef<HTMLDivElement>(null);
+  // Live fitting replaces the showroom background with the full-screen camera/AI video.
+  const [mediaHost, setMediaHost] = useState<HTMLDivElement | null>(null);
+  const [cameraLive, setCameraLive] = useState(false);
+  const fittingControl = useRef<MirrorLiveFittingHandle>(null);
   const touchStartX = useRef<number | null>(null);
   const lastWheelChangeAt = useRef(0);
   const strings = copy[language] as Record<MirrorCopyKey, string>;
@@ -485,7 +489,8 @@ export default function MirrorRoom() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="mirror-room" dir={language === "AR" ? "rtl" : "ltr"}>
+      <main className={`mirror-room ${cameraLive ? "is-camera-live" : ""}`} dir={language === "AR" ? "rtl" : "ltr"}>
+      <div className="mirror-camera-media-layer" ref={setMediaHost} aria-label="AI fitting video" />
       <div className="mirror-room-shade" aria-hidden="true" />
       <div className="mirror-glass-stage" aria-hidden="true" />
 
@@ -614,7 +619,7 @@ export default function MirrorRoom() {
           </>
         )}
 
-        <MirrorLiveFitting product={currentProduct} />
+        <MirrorLiveFitting product={currentProduct} mediaHost={mediaHost} onLiveChange={setCameraLive} controlRef={fittingControl} />
 
         {productStatus && (
           <div className={`mirror-catalog-status ${productError ? "has-error" : ""}`} role={productError ? "alert" : "status"}>
@@ -680,8 +685,8 @@ export default function MirrorRoom() {
           {cartNotice && !isCartOpen && <p className="mirror-cart-notice" role="status">{strings[cartNotice]}</p>}
           {cartSyncError && <p className="mirror-inline-error" role="alert">{strings[cartSyncError]}</p>}
           <div className="mirror-product-actions">
-            <button type="button" className="mirror-secondary-button" onClick={() => { window.location.assign(`/mirror/try-on?productId=${encodeURIComponent(currentProduct.id)}`); }} disabled={!selectedVariant || !currentProduct.image || currentProduct.demo}>
-              <Camera aria-hidden="true" /> {strings.tryOn}
+            <button type="button" className="mirror-secondary-button" onClick={() => fittingControl.current?.toggle()} disabled={!cameraLive && (!currentProduct.image || currentProduct.demo)} aria-pressed={cameraLive}>
+              <Camera aria-hidden="true" /> {cameraLive ? t("Stop") : strings.tryOn}
             </button>
             <button type="button" className="mirror-primary-button" onClick={addToCart} disabled={!selectedVariant?.inStock || currentProduct.demo}>
               <ShoppingCart aria-hidden="true" /> {strings.addToCart}

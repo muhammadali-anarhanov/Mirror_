@@ -4327,3 +4327,20 @@ body:has(.mirror-auth-page) {
 @media (max-height: 550px) and (orientation: landscape) {
   .mirror-room .mirror-side-nav { top: 180px; transform: none; }
 }
+
+/* Live fitting: the camera preview / Decart AI video replaces the showroom
+   background and fills the whole screen; the catalog UI floats above it. */
+.mirror-room .mirror-camera-media-layer { position: absolute; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; background: transparent; }
+.mirror-room.is-camera-live .mirror-camera-media-layer { z-index: 0; background: #111; }
+.mirror-live-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; transition: opacity 220ms ease; }
+.mirror-room.is-camera-live .mirror-camera-frame { pointer-events: none; }
+.mirror-room .mirror-camera-live-indicator { pointer-events: auto; }
+.mirror-live-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; margin-inline-start: 4px; padding: 0 12px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 12px; font-weight: 700; }
+.mirror-live-stop:hover { background: rgba(255, 255, 255, 0.28); }
+.mirror-live-stop svg { width: 12px; height: 12px; }
+.mirror-consent { display: flex; gap: 8px; max-width: 260px; margin: 0 0 14px; padding: 6px 8px; border: 1px solid transparent; border-radius: 10px; font-size: 11px; line-height: 1.45; color: rgba(255, 250, 241, 0.85); text-align: start; text-shadow: 0 2px 12px rgba(22, 17, 12, 0.8); cursor: pointer; }
+.mirror-consent.is-required { border-color: #ffb39d; background: rgba(83, 40, 31, 0.55); }
+/* Large portrait kiosks: keep the live badge centred under the category bar. */
+@media (min-width: 901px) and (orientation: portrait) {
+  .mirror-room.is-camera-live .mirror-camera-live-indicator { top: calc(clamp(16px, 7.2vh, 70px) + 140px); left: 50%; right: auto; transform: translateX(-50%); }
+}

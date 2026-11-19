@@ -1,6 +1,6 @@
 MIRROR fullscreen realtime fitting
 
-Catalog Try On opens /mirror/try-on?productId=<catalog UUID>. The dedicated page uses the existing authenticated Go catalog, garment and token endpoints. No iframe or legacy renderer is imported by the dedicated page.
+Catalog Try On now starts fitting in place on /mirror: after consent, the showroom background image is replaced by the full-screen camera preview and then the Decart AI video, while the catalog UI (categories, side products, product card, cart) stays on top. Stop (live badge or the product card button) restores the showroom background. The standalone page /mirror/try-on?productId=<catalog UUID> remains available. The dedicated page uses the existing authenticated Go catalog, garment and token endpoints. No iframe or legacy renderer is imported by the dedicated page.
 
 The selected approved JPEG/PNG is fetched through /decart/garments/:id, validated and displayed from a local blob URL. The backend resolves the tenant and branch catalog image; client image URLs are never passed to Decart. The existing server-held provider key and short-lived token endpoint are retained.
 

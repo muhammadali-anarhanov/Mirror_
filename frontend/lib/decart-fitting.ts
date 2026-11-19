@@ -106,7 +106,11 @@ export class DecartFittingSession {
       // The SDK calls the provider again when it redials (capacity queue, reconnect).
       // Reuse this session's short-lived token while valid instead of failing; the
       // 60 s timer still caps the session and a stopped session never gets a key.
-      const tokenExpiry = Date.parse(token.expiresAt);
+      // Measure validity on the local clock from receipt: a kiosk whose clock is
+      // off (wrong timezone/date) would otherwise see a fresh token as expired.
+      const serverLifetime = Date.parse(token.expiresAt) - Date.parse(response.headers.get("Date") || "");
+      const lifetime = Number.isFinite(serverLifetime) && serverLifetime > 0 ? Math.min(serverLifetime, SESSION_SECONDS * 1000) : SESSION_SECONDS * 1000;
+      const tokenExpiry = Date.now() + lifetime;
       const client = sdk.createDecartClient({logger: sdk.noopLogger, telemetry: false, apiKeyProvider: async () => {
         if (epoch !== this.epoch || !(tokenExpiry - 2000 > Date.now())) throw new Error("Explicit restart required");
         return token.apiKey;
