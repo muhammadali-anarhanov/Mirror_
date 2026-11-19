@@ -33,9 +33,14 @@ func (s *Server) changePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var b struct {
-		PlanID string `json:"planId"`
+		PlanID     string `json:"planId"`
+		ExtendDays int    `json:"extendDays"`
 	}
 	if !decode(w, r, &b) {
+		return
+	}
+	if b.ExtendDays < 0 || b.ExtendDays > 366 || (b.PlanID == "" && b.ExtendDays == 0) {
+		problem(w, 400, "choose a plan or a number of days to extend")
 		return
 	}
 	tx, e := s.DB.Begin(r.Context())
@@ -44,6 +49,26 @@ func (s *Server) changePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
+	if b.PlanID == "" {
+		// Manual renewal (payments are not integrated): extend from today or the current expiry.
+		tag, e := tx.Exec(r.Context(), "UPDATE mirror.subscriptions SET expires_at=GREATEST(expires_at,now())+make_interval(days=>$2),status='ACTIVE' WHERE tenant_id=$1", t, b.ExtendDays)
+		if e == nil && tag.RowsAffected() != 1 {
+			problem(w, 404, "subscription not found")
+			return
+		}
+		if e == nil {
+			e = s.audit(r.Context(), tx, current(r), "subscription.extend", b)
+		}
+		if e == nil {
+			e = tx.Commit(r.Context())
+		}
+		if e != nil {
+			s.dbError(w, e)
+			return
+		}
+		jsonResponse(w, 200, map[string]bool{"ok": true})
+		return
+	}
 	var old string
 	e = tx.QueryRow(r.Context(), "SELECT plan_id FROM mirror.subscriptions WHERE tenant_id=$1 FOR UPDATE", t).Scan(&old)
 	if e != nil {
@@ -67,6 +92,9 @@ func (s *Server) changePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, e = tx.Exec(r.Context(), "UPDATE mirror.subscriptions SET plan_id=$2 WHERE tenant_id=$1", t, b.PlanID)
+	if e == nil && b.ExtendDays > 0 {
+		_, e = tx.Exec(r.Context(), "UPDATE mirror.subscriptions SET expires_at=GREATEST(expires_at,now())+make_interval(days=>$2),status='ACTIVE' WHERE tenant_id=$1", t, b.ExtendDays)
+	}
 	if e == nil {
 		e = s.audit(r.Context(), tx, current(r), "subscription.plan", b)
 	}
@@ -168,19 +196,23 @@ func validItem(b cartItem) bool {
 }
 func (s *Server) cart(w http.ResponseWriter, r *http.Request) {
 	u := current(r)
-	if u.BranchID == "" {
-		problem(w, 403, "branch session required")
-		return
+	var b struct {
+		cartItem
+		BranchID string `json:"branchId"`
 	}
-	var b cartItem
 	if !decode(w, r, &b) {
 		return
 	}
-	if !validItem(b) {
+	branch, ok := s.sessionBranch(r, b.BranchID)
+	if !ok {
+		problem(w, 403, "branch session required")
+		return
+	}
+	if !validItem(b.cartItem) {
 		problem(w, 400, "invalid cart item")
 		return
 	}
-	tag, e := s.DB.Exec(r.Context(), `INSERT INTO mirror.carts(user_id,tenant_id,product_id,variant_id,qty) SELECT $1,$2,p.id,v.id,$5 FROM mirror.products p JOIN mirror.variants v ON v.product_id=p.id JOIN mirror.inventory i ON i.variant_id=v.id WHERE p.tenant_id=$2 AND p.id=$3 AND v.id=$4 AND v.active AND p.status='Published' AND i.branch_id=$6 AND i.quantity-i.blocked>=$5 ON CONFLICT(user_id,variant_id) DO UPDATE SET qty=LEAST(100,mirror.carts.qty+EXCLUDED.qty)`, u.ID, u.TenantID, b.ProductID, b.VariantID, b.Qty, u.BranchID)
+	tag, e := s.DB.Exec(r.Context(), `INSERT INTO mirror.carts(user_id,tenant_id,product_id,variant_id,qty) SELECT $1,$2,p.id,v.id,$5 FROM mirror.products p JOIN mirror.variants v ON v.product_id=p.id JOIN mirror.inventory i ON i.variant_id=v.id WHERE p.tenant_id=$2 AND p.id=$3 AND v.id=$4 AND v.active AND p.status='Published' AND i.branch_id=$6 AND i.quantity-i.blocked>=$5 ON CONFLICT(user_id,variant_id) DO UPDATE SET qty=LEAST(100,mirror.carts.qty+EXCLUDED.qty)`, u.ID, u.TenantID, b.ProductID, b.VariantID, b.Qty, branch)
 	if e != nil {
 		s.dbError(w, e)
 		return
@@ -193,14 +225,16 @@ func (s *Server) cart(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 	u := current(r)
-	if u.BranchID == "" {
-		problem(w, 403, "branch session required")
-		return
-	}
 	var b struct {
-		Items []cartItem `json:"items"`
+		Items    []cartItem `json:"items"`
+		BranchID string     `json:"branchId"`
 	}
 	if !decode(w, r, &b) {
+		return
+	}
+	branch, ok := s.sessionBranch(r, b.BranchID)
+	if !ok {
+		problem(w, 403, "branch session required")
 		return
 	}
 	if len(b.Items) == 0 || len(b.Items) > 100 {
@@ -222,13 +256,13 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 	id := uuid()
-	_, e = tx.Exec(r.Context(), "INSERT INTO mirror.orders(id,tenant_id,user_id,branch_id) VALUES($1,$2,$3,$4)", id, u.TenantID, u.ID, u.BranchID)
+	_, e = tx.Exec(r.Context(), "INSERT INTO mirror.orders(id,tenant_id,user_id,branch_id) VALUES($1,$2,$3,$4)", id, u.TenantID, u.ID, branch)
 	if e != nil {
 		s.dbError(w, e)
 		return
 	}
 	for _, i := range b.Items {
-		tag, e := tx.Exec(r.Context(), `INSERT INTO mirror.order_items(order_id,tenant_id,product_id,variant_id,qty,price_cents) SELECT $1,$2,p.id,v.id,$5,p.price_cents FROM mirror.products p JOIN mirror.variants v ON v.product_id=p.id JOIN mirror.inventory i ON i.variant_id=v.id WHERE p.tenant_id=$2 AND p.id=$3 AND v.id=$4 AND v.active AND p.status='Published' AND i.branch_id=$6 AND i.quantity-i.blocked>=$5`, id, u.TenantID, i.ProductID, i.VariantID, i.Qty, u.BranchID)
+		tag, e := tx.Exec(r.Context(), `INSERT INTO mirror.order_items(order_id,tenant_id,product_id,variant_id,qty,price_cents) SELECT $1,$2,p.id,v.id,$5,p.price_cents FROM mirror.products p JOIN mirror.variants v ON v.product_id=p.id JOIN mirror.inventory i ON i.variant_id=v.id WHERE p.tenant_id=$2 AND p.id=$3 AND v.id=$4 AND v.active AND p.status='Published' AND i.branch_id=$6 AND i.quantity-i.blocked>=$5`, id, u.TenantID, i.ProductID, i.VariantID, i.Qty, branch)
 		if e != nil {
 			s.dbError(w, e)
 			return
@@ -258,20 +292,6 @@ func (s *Server) orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.list(w, r, `SELECT to_jsonb(o)||jsonb_build_object('items',(SELECT jsonb_agg(to_jsonb(i)) FROM mirror.order_items i WHERE i.order_id=o.id)) FROM mirror.orders o WHERE tenant_id=$1 AND ($2='' OR branch_id=NULLIF($2,'')::uuid) ORDER BY created_at DESC LIMIT 500`, t, current(r).BranchID)
-}
-func (s *Server) analytics(w http.ResponseWriter, r *http.Request) {
-	t, ok := tenant(r)
-	if !ok {
-		problem(w, 400, "tenantId required")
-		return
-	}
-	var out []byte
-	e := s.DB.QueryRow(r.Context(), `SELECT jsonb_build_object('tryonSessions',(SELECT count(*) FROM mirror.tryon_sessions WHERE tenant_id=$1 AND ($2='' OR branch_id=NULLIF($2,'')::uuid)),'activeBranches',(SELECT count(*) FROM mirror.branches WHERE tenant_id=$1 AND status='ACTIVE' AND ($2='' OR id=NULLIF($2,'')::uuid)),'activeDevices',(SELECT count(*) FROM mirror.devices WHERE tenant_id=$1 AND last_seen>now()-interval '5 minutes' AND ($2='' OR branch_id=NULLIF($2,'')::uuid)),'cashierRequests',(SELECT count(*) FROM mirror.orders WHERE tenant_id=$1 AND ($2='' OR branch_id=NULLIF($2,'')::uuid)),'salesDataAvailable',false)`, t, current(r).BranchID).Scan(&out)
-	if e != nil {
-		s.dbError(w, e)
-		return
-	}
-	jsonResponse(w, 200, json.RawMessage(out))
 }
 func (s *Server) notifications(w http.ResponseWriter, r *http.Request) {
 	t, ok := tenant(r)
@@ -308,14 +328,6 @@ func (s *Server) readNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(w, 200, map[string]bool{"ok": true})
-}
-func (s *Server) auditLogs(w http.ResponseWriter, r *http.Request) {
-	t, ok := tenant(r)
-	if !ok {
-		problem(w, 400, "tenantId required")
-		return
-	}
-	s.list(w, r, "SELECT to_jsonb(a) FROM mirror.audit_logs a WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 500", t)
 }
 func (s *Server) application(w http.ResponseWriter, r *http.Request) {
 	host, _, _ := net.SplitHostPort(r.RemoteAddr)

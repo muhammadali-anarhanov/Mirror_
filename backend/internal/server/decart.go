@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"mirror/backend/internal/decart"
 	"net/http"
 	"strconv"
@@ -21,7 +23,8 @@ func (s *Server) decartToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Consent bool `json:"consent"`
+		Consent   bool   `json:"consent"`
+		ProductID string `json:"productId"`
 	}
 	if !decode(w, r, &input) {
 		return
@@ -52,6 +55,17 @@ func (s *Server) decartToken(w http.ResponseWriter, r *http.Request) {
 		}
 		problem(w, 502, "Decart token service unavailable or returned an invalid response")
 		return
+	}
+	// Record the fitting start for statistics; failures must not block the session.
+	product := ""
+	if validID(input.ProductID) {
+		product = input.ProductID
+	}
+	details, _ := json.Marshal(map[string]string{"productId": product, "branchId": u.BranchID})
+	if s.DB == nil {
+		// Unit tests run without a database.
+	} else if _, e := s.DB.Exec(r.Context(), "INSERT INTO mirror.audit_logs(tenant_id,actor_id,action,details) VALUES($1,$2,'fitting.start',$3)", u.TenantID, u.ID, string(details)); e != nil {
+		slog.Warn("fitting statistics not recorded", "type", errorType(e))
 	}
 	jsonResponse(w, 200, map[string]any{"apiKey": token.APIKey, "expiresAt": token.ExpiresAt, "model": decart.Model, "maxSessionSeconds": decart.MaxSessionSeconds})
 }

@@ -248,6 +248,13 @@ func TestPostgresAPI(t *testing.T) {
 	check(jreq("PUT", "/api/v1/subscription", map[string]string{"planId": "growth"}, a), 403)
 	check(jreq("PUT", "/api/v1/subscription?tenantId="+tenantA, map[string]string{"planId": "growth"}, platform), 200)
 	check(jreq("POST", "/api/v1/branches", map[string]string{"name": "Second branch"}, a), 201)
+	check(jreq("PUT", "/api/v1/subscription?tenantId="+tenantA, map[string]any{}, platform), 400)
+	check(jreq("PUT", "/api/v1/subscription?tenantId="+tenantA, map[string]any{"extendDays": 30}, platform), 200)
+	var expires time.Time
+	mustScan("SELECT expires_at FROM mirror.subscriptions WHERE tenant_id=$1", []any{tenantA}, &expires)
+	if time.Until(expires) < 50*24*time.Hour {
+		t.Fatalf("subscription not extended: %v", expires)
+	}
 	// Restore the smaller allowance for credit-limit assertions later.
 	if _, e := db.Exec(ctx, "UPDATE mirror.subscriptions SET plan_id='starter' WHERE tenant_id=$1", tenantA); e != nil {
 		t.Fatal(e)
@@ -371,6 +378,86 @@ func TestPostgresAPI(t *testing.T) {
 	check(jreq("POST", "/api/v1/cart", item, staff), 200)
 	check(jreq("POST", "/api/v1/orders/checkout", map[string]any{"items": []cartItem{item}}, staff), 201)
 	check(jreq("GET", "/api/v1/analytics", nil, staff), 200)
+
+	// Brand admins may run a kiosk only for a branch of their own brand.
+	check(jreq("POST", "/api/v1/cart", item, a), 403)
+	check(jreq("POST", "/api/v1/cart", map[string]any{"productId": item.ProductID, "variantId": item.VariantID, "qty": 1, "branchId": branchB}, a), 403)
+	check(jreq("POST", "/api/v1/cart", map[string]any{"productId": item.ProductID, "variantId": item.VariantID, "qty": 1, "branchId": branchA}, a), 200)
+	w = jreq("POST", "/api/v1/orders/checkout", map[string]any{"items": []cartItem{item}, "branchId": branchA}, a)
+	check(w, 201)
+	var order struct{ ID string }
+	_ = json.Unmarshal(w.Body.Bytes(), &order)
+	check(jreq("PATCH", "/api/v1/orders/"+order.ID, map[string]string{"status": "SOLD"}, staff), 400)
+	check(jreq("PATCH", "/api/v1/orders/"+order.ID, map[string]string{"status": "COMPLETED"}, b), 404)
+	var before, after int
+	mustScan("SELECT quantity FROM mirror.inventory WHERE variant_id=$1 AND branch_id=$2", []any{item.VariantID, branchA}, &before)
+	check(jreq("PATCH", "/api/v1/orders/"+order.ID, map[string]string{"status": "COMPLETED"}, staff), 200)
+	mustScan("SELECT quantity FROM mirror.inventory WHERE variant_id=$1 AND branch_id=$2", []any{item.VariantID, branchA}, &after)
+	if after != before-1 {
+		t.Fatalf("sale did not reduce stock: %d -> %d", before, after)
+	}
+	check(jreq("PATCH", "/api/v1/orders/"+order.ID, map[string]string{"status": "CANCELLED"}, staff), 200)
+	mustScan("SELECT quantity FROM mirror.inventory WHERE variant_id=$1 AND branch_id=$2", []any{item.VariantID, branchA}, &after)
+	if after != before {
+		t.Fatalf("undoing a sale did not restore stock: %d -> %d", before, after)
+	}
+	check(jreq("PATCH", "/api/v1/orders/"+order.ID, map[string]string{"status": "COMPLETED"}, staff), 200)
+
+	// Fitting starts are counted from audit rows; analytics reports them and sales.
+	if _, e := db.Exec(ctx, "INSERT INTO mirror.audit_logs(tenant_id,action,details) VALUES($1,'fitting.start',jsonb_build_object('productId',$2::text,'branchId',$3::text))", tenantA, product.ID, branchA); e != nil {
+		t.Fatal(e)
+	}
+	w = jreq("GET", "/api/v1/analytics?days=7", nil, a)
+	check(w, 200)
+	var stats struct {
+		TryonSessions   int
+		CompletedOrders int
+		CompletedValue  float64
+		Series          []map[string]any
+		TopProducts     []map[string]any
+	}
+	if e := json.Unmarshal(w.Body.Bytes(), &stats); e != nil || stats.TryonSessions != 1 || stats.CompletedOrders != 1 || stats.CompletedValue != 42.5 || len(stats.Series) != 7 || len(stats.TopProducts) != 1 {
+		t.Fatalf("analytics: %v %s", e, w.Body.String())
+	}
+	w = jreq("GET", "/api/v1/analytics", nil, b)
+	check(w, 200)
+	if strings.Contains(w.Body.String(), product.ID) {
+		t.Fatal("analytics tenant leak")
+	}
+	check(jreq("GET", "/api/v1/platform/stats", nil, a), 403)
+	w = jreq("GET", "/api/v1/platform/stats?days=30", nil, platform)
+	check(w, 200)
+	if !strings.Contains(w.Body.String(), `"brands": 2`) && !strings.Contains(w.Body.String(), `"brands":2`) {
+		t.Fatalf("platform stats: %s", w.Body.String())
+	}
+	w = jreq("GET", "/api/v1/brands", nil, platform)
+	check(w, 200)
+	if !strings.Contains(w.Body.String(), `"planId"`) {
+		t.Fatalf("brands: %s", w.Body.String())
+	}
+	check(jreq("GET", "/api/v1/audit-logs?scope=platform", nil, platform), 200)
+
+	// Passwords: own change needs the current password; admins reset within their brand.
+	check(jreq("POST", "/api/v1/auth/password", map[string]string{"currentPassword": "wrong-password", "newPassword": "a-new-password-1"}, store), 403)
+	check(jreq("POST", "/api/v1/auth/password", map[string]string{"currentPassword": "test-password-123", "newPassword": "short"}, store), 400)
+	check(jreq("POST", "/api/v1/auth/password", map[string]string{"currentPassword": "test-password-123", "newPassword": "a-new-password-1"}, store), 200)
+	check(jreq("GET", "/api/v1/auth/me", nil, store), 200)
+	check(jreq("POST", "/api/v1/auth/login", map[string]string{"email": "store@example.com", "password": "test-password-123"}, nil), 401)
+	store = login("store@example.com", "a-new-password-1")
+	var staffID string
+	mustScan("SELECT id::text FROM mirror.users WHERE email='staff@example.com'", nil, &staffID)
+	check(jreq("POST", "/api/v1/users/"+staffID+"/password", map[string]string{"password": "reset-password-12"}, b), 404)
+	check(jreq("POST", "/api/v1/users/"+staffID+"/password", map[string]string{"password": "reset-password-12"}, a), 200)
+	check(jreq("GET", "/api/v1/auth/me", nil, staff), 401)
+	staff = login("staff@example.com", "reset-password-12")
+
+	// Branch edits and the kiosk heartbeat.
+	check(jreq("PATCH", "/api/v1/branches/"+branchA, map[string]string{"name": "A renamed", "address": "Main st", "status": "ACTIVE"}, a), 200)
+	check(jreq("PATCH", "/api/v1/branches/"+branchA, map[string]string{"name": "x", "status": "ACTIVE"}, b), 404)
+	var deviceID string
+	mustScan("SELECT id::text FROM mirror.devices WHERE tenant_id=$1 LIMIT 1", []any{tenantA}, &deviceID)
+	check(jreq("POST", "/api/v1/devices/"+deviceID+"/heartbeat", nil, b), 404)
+	check(jreq("POST", "/api/v1/devices/"+deviceID+"/heartbeat", nil, staff), 200)
 	// Concurrent repeated request keys deduct exactly once.
 	var wg sync.WaitGroup
 	errch := make(chan error, 5)
