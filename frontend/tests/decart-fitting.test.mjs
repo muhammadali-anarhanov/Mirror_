@@ -59,3 +59,20 @@ test('SDK error strings and credentials are never exposed',()=>{
  assert.doesNotMatch(decartError(new Error('bad https://api.decart.ai/x?api_key=ek_abc eyJhbGciOi.payload.sig dct_live_1')),/https|ek_abc|eyJ|dct_live/);
  assert.doesNotMatch(decartError({name:'dct_secret https://x'}),/dct_secret/);
 });
+test('a device clock running ahead still passes the SDK token expiry check',async()=>{
+ const {clockSkew,useServerClockBriefly}=await import('../lib/decart-fitting.ts');
+ const now=Date.parse('2026-01-01T12:02:00Z');
+ // Token minted at 12:00:00 server time (expires 12:01:00); this device says 12:02:00.
+ assert.equal(clockSkew('2026-01-01T12:01:00Z',null,now),120000);
+ assert.equal(clockSkew('2026-01-01T12:01:00Z','Thu, 01 Jan 2026 12:00:00 GMT',now),119500);
+ assert.equal(clockSkew('2026-01-01T13:01:00Z',null,now),0);
+ const real=Date.now,before=Date.now();useServerClockBriefly(120000);
+ // The SDK checks in the microtask after the key provider resolves.
+ await Promise.resolve();assert.ok(before-Date.now()>119000);
+ await new Promise(r=>setTimeout(r,5));assert.equal(Date.now,real);assert.ok(Math.abs(Date.now()-before)<1000);
+});
+test('token request names the product for statistics',async()=>{
+ const f=fixture({});await f.session.start(garment);
+ try{const call=f.calls.find(c=>c.path==='/decart/token');assert.deepEqual(JSON.parse(call.init.body),{consent:true,productId:garment.id});}
+ finally{f.session.stop()}
+});

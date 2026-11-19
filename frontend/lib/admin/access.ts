@@ -3,7 +3,7 @@ export type PlatformRole = "SUPER_ADMIN" | "BRAND_ADMIN" | "STORE_ADMIN" | "STAF
 export const ROLE_DASHBOARD_PATHS: Record<PlatformRole, string> = {
   SUPER_ADMIN: "/super-admin/dashboard",
   BRAND_ADMIN: "/brand/dashboard",
-  STORE_ADMIN: "/brand/dashboard",
+  STORE_ADMIN: "/staff/dashboard",
   STAFF: "/staff/dashboard",
 }
 

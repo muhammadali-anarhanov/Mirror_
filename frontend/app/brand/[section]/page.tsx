@@ -1,14 +1,8 @@
 import { notFound } from "next/navigation"
-import { AdminRoute } from "@/components/admin/admin-route"
-import { ADMIN_SECTION_DEFINITIONS } from "@/lib/admin/admin-catalog"
+import { AdminRoute, isConsoleSection } from "@/components/admin/admin-route"
 
-const brandSections = new Set([
-  "dashboard", "products", "stock-receiving", "inventory", "transfers", "branches",
-  "devices", "staff", "analytics", "subscription", "notifications", "integrations", "settings",
-])
-
-export default async function BrandAdminSectionPage({ params }: { params: Promise<{ section: string }> }) {
+export default async function ConsoleSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params
-  if (!brandSections.has(section) || (section !== "dashboard" && !ADMIN_SECTION_DEFINITIONS[section])) notFound()
+  if (!isConsoleSection("brand", section)) notFound()
   return <AdminRoute kind="brand" section={section} />
 }

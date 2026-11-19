@@ -176,7 +176,13 @@ function CartPanel({
   onQuantity,
   onRemove,
   onCheckout,
+  branches,
+  branchId,
+  onBranch,
 }: {
+  branches: { id: string; name: string }[];
+  branchId: string;
+  onBranch: (id: string) => void;
   items: CartItem[];
   total: number;
   count: number;
@@ -266,6 +272,14 @@ function CartPanel({
         </div>
         <footer className="mirror-cart-footer">
           {error && <p className="mirror-inline-error" role="alert">{t(error)}</p>}
+          {branches.length > 1 && (
+            <label className="mirror-cart-branch">
+              <span>{t("Branch")}</span>
+              <select value={branchId} onChange={(event) => onBranch(event.target.value)}>
+                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+              </select>
+            </label>
+          )}
           <div className="mirror-cart-total"><span>{labels.total}</span><strong>{money(total, language)}</strong></div>
           <button
             type="button"
@@ -304,6 +318,42 @@ export default function MirrorRoom() {
     }
   }, [cart, cartRestored]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  // Brand-level accounts run the kiosk for a chosen branch; branch accounts use their own.
+  const [kioskBranches, setKioskBranches] = useState<{ id: string; name: string }[]>([]);
+  const [kioskBranch, setKioskBranch] = useState("");
+  const [stockNotice, setStockNotice] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const me = await apiFetch("/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (cancelled || !me?.user || me.user.branchId) return;
+      const list = await apiFetch("/branches").then((r) => (r.ok ? r.json() : [])).catch(() => []);
+      if (cancelled || !Array.isArray(list) || !list.length) return;
+      setKioskBranches(list.filter((b: { status?: string }) => b.status !== "INACTIVE"));
+      let stored = "";
+      try { stored = localStorage.getItem("mirror-branch") || ""; } catch { /* storage disabled */ }
+      setKioskBranch(list.some((b: { id: string }) => b.id === stored) ? stored : list[0].id);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  const chooseKioskBranch = (id: string) => {
+    setKioskBranch(id);
+    try { localStorage.setItem("mirror-branch", id); } catch { /* storage disabled */ }
+  };
+  // A registered smart mirror (?device=<id>) reports online every minute.
+  useEffect(() => {
+    let device = "";
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("device") || "";
+      if (/^[0-9a-f-]{36}$/i.test(fromUrl)) localStorage.setItem("mirror-device", fromUrl);
+      device = localStorage.getItem("mirror-device") || "";
+    } catch { /* storage disabled */ }
+    if (!/^[0-9a-f-]{36}$/i.test(device)) return;
+    const beat = () => { void apiFetch(`/devices/${device}/heartbeat`, { method: "POST" }).catch(() => null); };
+    beat();
+    const timer = setInterval(beat, 60000);
+    return () => clearInterval(timer);
+  }, []);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const {language,setLanguage} = useMarketingLanguage();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
@@ -437,9 +487,18 @@ export default function MirrorRoom() {
       const response = await apiFetch("/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: currentProduct.id, variantId: selectedVariant.id, qty: 1 }),
+        body: JSON.stringify({ productId: currentProduct.id, variantId: selectedVariant.id, qty: 1, ...(kioskBranch ? { branchId: kioskBranch } : {}) }),
       });
+      if (response.status === 409) {
+        // Not in stock at this branch: undo the local add.
+        setCart((previous) => previous
+          .map((item) => item.variantId === selectedVariant.id ? { ...item, quantity: item.quantity - 1 } : item)
+          .filter((item) => item.quantity > 0));
+        setStockNotice("This size is out of stock in this branch.");
+        return;
+      }
       if (!response.ok) throw new Error(`Cart request failed (${response.status}).`);
+      setStockNotice("");
       setCartNotice("cartAdded");
     } catch (cause) {
       console.error("Cart sync error:", cause);
@@ -465,9 +524,11 @@ export default function MirrorRoom() {
       const response = await apiFetch("/orders/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variantId, qty: item.quantity })) }),
+        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variantId, qty: item.quantity })), ...(kioskBranch ? { branchId: kioskBranch } : {}) }),
       });
+      if (response.status === 409) { setStockNotice("Some items are no longer in stock in this branch. Remove them and try again."); throw new Error("Out of stock"); }
       if (!response.ok) throw new Error(`Checkout request failed (${response.status}).`);
+      setStockNotice("");
       setCart([]);
       setCartSyncError("");
       setCartNotice("orderSent");
@@ -684,6 +745,7 @@ export default function MirrorRoom() {
           )}
           {cartNotice && !isCartOpen && <p className="mirror-cart-notice" role="status">{strings[cartNotice]}</p>}
           {cartSyncError && <p className="mirror-inline-error" role="alert">{strings[cartSyncError]}</p>}
+          {stockNotice && <p className="mirror-inline-error" role="alert">{t(stockNotice)}</p>}
           <div className="mirror-product-actions">
             <button type="button" className="mirror-secondary-button" onClick={() => fittingControl.current?.toggle()} disabled={!cameraLive && (!currentProduct.image || currentProduct.demo)} aria-pressed={cameraLive}>
               <Camera aria-hidden="true" /> {cameraLive ? t("Stop") : strings.tryOn}
@@ -713,7 +775,10 @@ export default function MirrorRoom() {
           labels={labels}
           language={language}
           busy={checkoutLoading}
-          error={checkoutError ? strings[checkoutError] : cartSyncError ? strings[cartSyncError] : ""}
+          error={stockNotice || (checkoutError ? strings[checkoutError] : cartSyncError ? strings[cartSyncError] : "")}
+          branches={kioskBranches}
+          branchId={kioskBranch}
+          onBranch={chooseKioskBranch}
           onClose={() => setIsCartOpen(false)}
           onQuantity={changeQuantity}
           onRemove={removeFromCart}

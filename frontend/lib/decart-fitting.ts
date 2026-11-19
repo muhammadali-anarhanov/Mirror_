@@ -37,6 +37,25 @@ export function decartError(error: unknown): string {
     : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name}${safeDetail(error)})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
 }
 
+/** How far this device's clock runs ahead of the server (ms); 0 when unknown or behind. */
+export function clockSkew(expiresAt: string, dateHeader: string | null, now = Date.now()) {
+  const fromHeader = Date.parse(dateHeader || "")
+  const exp = Date.parse(expiresAt)
+  const serverNow = Number.isFinite(fromHeader) ? fromHeader + 500 : Number.isFinite(exp) ? exp - SESSION_SECONDS * 1000 : NaN
+  return Number.isFinite(serverNow) ? Math.max(0, now - serverNow) : 0
+}
+
+/**
+ * Shows server time through Date.now until the current task ends. The SDK's
+ * expiry check runs in the microtask right after the key provider resolves.
+ */
+export function useServerClockBriefly(skew: number) {
+  const real = Date.now
+  const shifted = () => real.call(Date) - skew
+  Date.now = shifted
+  setTimeout(() => { if (Date.now === shifted) Date.now = real }, 0)
+}
+
 export class DecartFittingSession {
   private deps: Dependencies;
   private epoch = 0;
@@ -94,7 +113,7 @@ export class DecartFittingSession {
       const sdk = await this.deps.loadSDK();
       if (epoch !== this.epoch) return;
       this.deps.state("connecting");
-      const response = await this.deps.request("/decart/token", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({consent: true})});
+      const response = await this.deps.request("/decart/token", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({consent: true, productId: product.id})});
       if (epoch !== this.epoch) return;
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -114,12 +133,14 @@ export class DecartFittingSession {
       const serverLifetime = Date.parse(token.expiresAt) - Date.parse(response.headers.get("Date") || "");
       const lifetime = Number.isFinite(serverLifetime) && serverLifetime > 0 ? Math.min(serverLifetime, SESSION_SECONDS * 1000) : SESSION_SECONDS * 1000;
       const tokenExpiry = Date.now() + lifetime;
-      // The Decart SDK refuses a token whose expiry is already past by this device's clock
-      // (TOKEN_EXPIRED). Detect a fast clock before any billable connection and say so plainly.
-      const exp = Date.parse(token.expiresAt);
-      if (Number.isFinite(exp) && exp - Date.now() < 5000) { this.fail(CLOCK_MESSAGE); return; }
+      // The Decart SDK checks the token expiry against this device's clock before it
+      // dials and refuses with TOKEN_EXPIRED when the clock runs fast. Estimate the
+      // server time (Date header, else expiry minus the 60 s token lifetime) and
+      // present it to the SDK for that check only.
+      const skew = clockSkew(token.expiresAt, response.headers.get("Date"));
       const client = sdk.createDecartClient({logger: sdk.noopLogger, telemetry: false, apiKeyProvider: async () => {
         if (epoch !== this.epoch || !(tokenExpiry - 2000 > Date.now())) throw new Error("Explicit restart required");
+        if (skew > 2000) useServerClockBriefly(skew);
         return token.apiKey;
       }});
       const options: RealTimeClientConnectOptions = {
