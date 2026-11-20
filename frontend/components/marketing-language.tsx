@@ -13,7 +13,8 @@ export function MarketingLanguageProvider({ children, initialLanguage = "EN" }: 
   const setLanguage=useCallback((next:Language)=> {
     if(!isLanguage(next))return;
     setLanguageState(next);
-    document.cookie=`mirror_language=${next}; Max-Age=31536000; Path=/; SameSite=Lax`;
+    // Session cookie: every new visit starts in English; the choice lasts until the browser closes.
+    document.cookie=`mirror_language=${next}; Path=/; SameSite=Lax`;
   },[]);
   useEffect(()=> {
     // Legacy admin links represent an explicit language choice; migrate them to

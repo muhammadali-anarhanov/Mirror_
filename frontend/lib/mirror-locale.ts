@@ -2,7 +2,7 @@ export type MirrorLanguage = "UZ" | "EN" | "RU" | "KK" | "AR" | "TR";
 
 export type MirrorCategory = "Full Body" | "Top Body" | "Head" | "Pants" | "Footwear";
 
-export const mirrorLanguages: MirrorLanguage[] = ["UZ", "EN", "RU", "KK", "AR", "TR"];
+export const mirrorLanguages: MirrorLanguage[] = ["EN", "UZ", "RU", "KK", "AR", "TR"];
 
 export const mirrorLanguageLocale: Record<MirrorLanguage, string> = {
   UZ: "uz-UZ",

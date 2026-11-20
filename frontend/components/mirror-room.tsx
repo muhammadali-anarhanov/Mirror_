@@ -357,6 +357,16 @@ export default function MirrorRoom() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const {language,setLanguage} = useMarketingLanguage();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  // The kiosk browser stays open between customers: after 3 idle minutes the
+  // next customer starts in English again.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const arm = () => { clearTimeout(timer); timer = setTimeout(() => setLanguage("EN"), 3 * 60 * 1000); };
+    const events = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
+    events.forEach((name) => window.addEventListener(name, arm, { passive: true }));
+    arm();
+    return () => { clearTimeout(timer); events.forEach((name) => window.removeEventListener(name, arm)); };
+  }, [setLanguage]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<MirrorCopyKey | "">("");
   const [cartSyncError, setCartSyncError] = useState<MirrorCopyKey | "">("");
