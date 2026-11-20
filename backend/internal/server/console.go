@@ -214,7 +214,7 @@ func (s *Server) resetUserPassword(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &b) {
 		return
 	}
-	if !validID(id) || !validPassword(b.Password) || id == u.ID {
+	if !validID(id) || !validKioskPassword(b.Password) || id == u.ID {
 		problem(w, 400, "password must be 12 to 72 characters; use account settings for your own password")
 		return
 	}
@@ -229,6 +229,12 @@ func (s *Server) resetUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
+	// Admin accounts need 12+ characters; mirror (kiosk) accounts 8+.
+	var kiosk bool
+	if e := s.DB.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM mirror.devices WHERE user_id=$1)", id).Scan(&kiosk); e != nil || (!kiosk && !validPassword(b.Password)) {
+		problem(w, 400, "password must be 12 to 72 characters; use account settings for your own password")
+		return
+	}
 	scope := u.TenantID // Brand Admins only reach their own brand.
 	if u.Role == "SUPER_ADMIN" {
 		scope = ""

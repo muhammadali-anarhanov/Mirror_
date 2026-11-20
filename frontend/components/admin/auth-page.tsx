@@ -57,7 +57,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       const data = await response.json()
       if (!response.ok) throw new Error(response.status === 401 ? "Wrong email or password." : response.status === 429 ? "Too many attempts. Wait 15 minutes and try again." : data.error || "Sign-in failed")
       setFeedback("Signed in. Opening your workspace…")
-      window.location.assign(safeNextPath(window.location.search) ?? dashboardPathForRole(data.user.role as PlatformRole))
+      // A smart-mirror account opens the fitting room, not a console.
+      const me = await apiFetch("/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      const kiosk = Boolean(me?.device?.id)
+      window.location.assign(kiosk ? "/mirror" : safeNextPath(window.location.search) ?? dashboardPathForRole(data.user.role as PlatformRole))
     } catch (error) { setFeedback(error instanceof Error ? error.message : "Sign-in failed") }
   }
 

@@ -22,7 +22,8 @@ export type MirrorLiveFittingHandle = {
   toggle: () => void;
 };
 
-export function MirrorLiveFitting({ product, mediaHost, onLiveChange, controlRef }: {
+export function MirrorLiveFitting({ product, mediaHost, onLiveChange, controlRef, deviceId = "" }: {
+  deviceId?: string;
   product: (DecartGarment & { image?: string }) | null | undefined;
   mediaHost: HTMLElement | null;
   onLiveChange?: (live: boolean) => void;
@@ -95,7 +96,7 @@ export function MirrorLiveFitting({ product, mediaHost, onLiveChange, controlRef
     if (!product || !usable) return;
     if (!consent) { setNeedConsent(true); consentBox.current?.focus(); return; }
     setNeedConsent(false);
-    void session.current?.start(product);
+    void session.current?.start(product, deviceId);
   };
 
   useImperativeHandle(controlRef, () => ({

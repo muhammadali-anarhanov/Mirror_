@@ -4,7 +4,7 @@ import "@/app/console.css"
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import {
-  Activity, Bell, Boxes, Building2, ClipboardList, CreditCard, FileClock, LayoutDashboard, LogOut,
+  Activity, Bell, DollarSign, Boxes, Building2, ClipboardList, CreditCard, FileClock, LayoutDashboard, LogOut,
   Menu, MonitorSmartphone, Package, Receipt, Shield, Sparkles, Store, UserCog, Users,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -17,7 +17,9 @@ import { ToastProvider } from "./ui"
 import { BrandOverview, PlatformOverview } from "./overview"
 import { Products } from "./catalog"
 import { Inventory, Orders } from "./operations"
-import { Branches, Devices, Staff } from "./organization"
+import { Branches, Staff } from "./organization"
+import { MirrorPages } from "./mirrors"
+import { RevenuePage } from "./revenue"
 import { Applications, Brands, Subscriptions } from "./platform"
 import { Account, AuditLogs, BrandSubscription, Notifications } from "./misc"
 
@@ -26,6 +28,7 @@ type NavItem = { key: string; label: string; icon: LucideIcon; group: string; ro
 const NAV: Record<ConsoleKind, NavItem[]> = {
   "super-admin": [
     { key: "dashboard", label: "Overview", icon: LayoutDashboard, group: "Platform" },
+    { key: "revenue", label: "Revenue", icon: DollarSign, group: "Platform" },
     { key: "applications", label: "Applications", icon: ClipboardList, group: "Platform" },
     { key: "brands", label: "Brands", icon: Building2, group: "Platform" },
     { key: "subscriptions", label: "Subscriptions", icon: CreditCard, group: "Platform" },
@@ -38,7 +41,7 @@ const NAV: Record<ConsoleKind, NavItem[]> = {
     { key: "inventory", label: "Inventory", icon: Boxes, group: "Daily work" },
     { key: "orders", label: "Orders", icon: Receipt, group: "Daily work" },
     { key: "branches", label: "Branches", icon: Store, group: "Brand" },
-    { key: "devices", label: "Smart mirrors", icon: MonitorSmartphone, group: "Brand" },
+    { key: "devices", label: "Mirror pages", icon: MonitorSmartphone, group: "Daily work" },
     { key: "staff", label: "Staff", icon: Users, group: "Brand" },
     { key: "subscription", label: "Subscription", icon: CreditCard, group: "Brand" },
     { key: "notifications", label: "Notifications", icon: Bell, group: "Control" },
@@ -50,7 +53,7 @@ const NAV: Record<ConsoleKind, NavItem[]> = {
     { key: "products", label: "Products", icon: Package, group: "Store" },
     { key: "inventory", label: "Inventory", icon: Boxes, group: "Store" },
     { key: "orders", label: "Orders", icon: Receipt, group: "Store" },
-    { key: "devices", label: "Smart mirrors", icon: MonitorSmartphone, group: "Store" },
+    { key: "devices", label: "Mirror pages", icon: MonitorSmartphone, group: "Store" },
     { key: "notifications", label: "Notifications", icon: Bell, group: "Store" },
     { key: "account", label: "Account", icon: UserCog, group: "Store" },
   ],
@@ -102,7 +105,8 @@ function Console({ kind, section, me }: { kind: ConsoleKind; section: string; me
     case "inventory": page = <Inventory me={me} />; break
     case "orders": page = <Orders me={me} />; break
     case "branches": page = <Branches />; break
-    case "devices": page = <Devices me={me} />; break
+    case "devices": page = <MirrorPages me={me} />; break
+    case "revenue": page = <RevenuePage />; break
     case "staff": page = <Staff />; break
     case "subscription": page = <BrandSubscription />; break
     case "notifications": page = <Notifications />; break

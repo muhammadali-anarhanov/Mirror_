@@ -46,3 +46,22 @@ The Decart SDK checks the client token expiry against the device clock before it
 4. With Playwright, run this flow: application → approve → brand admin sign-in → scan-add product with photo → receive stock → register mirror → kiosk cart → cashier → mark sold → statistics.
 
 Go integration tests: `TEST_DATABASE_URL=postgres://… go test ./...`.
+
+## Mirror pages, try-on limits and revenue
+
+- A **mirror page** is a smart mirror with its own sign-in (email and a password of 8+ characters) and a prepaid AI try-on limit.
+  - Signing in with that account opens `/mirror` directly; the kiosk has no profile button.
+  - The **Exit** button asks for the mirror's password before signing out.
+- Every AI fitting start on a mirror uses one try-on. When the limit is used up, the mirror stops starting AI sessions. A try-on is refunded if the provider token cannot be created.
+- Brand admins create mirror pages and buy try-on packages (100, 500 or 1000) from each mirror card. No payment provider is integrated, so a brand's purchase stays **pending** until the Super Admin presses *Payment received* in **Revenue**. Packages the Super Admin sells are credited immediately.
+- Per-mirror statistics:
+  - AI try-ons today, in the period and per day;
+  - sent to cashier, bought, conversion, sold value;
+  - remaining limit with a low-limit warning and an estimate of the days left.
+- Super Admin **Revenue** shows, in total and per store:
+  - package income, split into first packages and extra top-ups;
+  - pending payments and monthly subscription value;
+  - mirror pages (online), try-ons used and remaining, and the stores' own sales;
+  - an estimated margin after about $0.60 of AI cost per try-on.
+- The Super Admin edits package prices on the Revenue page.
+- Migration `004_mirror_pages.sql` adds device limits, `orders.device_id` and `limit_purchases`. The API applies pending migrations when it starts.

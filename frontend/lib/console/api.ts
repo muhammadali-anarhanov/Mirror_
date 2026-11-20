@@ -101,3 +101,25 @@ export function generatePassword() {
 export function skuPart(value: string, max = 24) {
   return value.normalize("NFKD").replace(/[^\w\s-]/g, "").trim().toUpperCase().replace(/[\s_]+/g, "-").replace(/-+/g, "-").slice(0, max) || "ITEM"
 }
+
+export type MirrorPage = {
+  id: string; name: string; branchId: string; branch: string; status: string; lastSeen: string | null; createdAt: string; layout: string | null
+  email: string | null; userId: string | null; accountStatus: string | null
+  tryonLimit: number; tryonsUsed: number; remaining: number; today: number; fittings: number; requests: number; sold: number; soldValue: number
+  avgDaily: number; paidCents: number; pending: number; series: { date: string; fittings: number }[]
+}
+export type Package = { id: string; name: string; credits: number; price_cents: number | null; active: boolean }
+export type Purchase = { id: string; tenant_id: string; device_id: string; package_id: string; kind: "INITIAL" | "TOPUP"; tryons: number; amount_cents: number; status: "PENDING" | "PAID" | "CANCELLED"; created_at: string; paid_at: string | null; brand: string; mirror: string }
+export type BrandRevenue = {
+  id: string; name: string; status: string; planId: string | null; plan: number; mirrors: number; online: number; tryonsBought: number; tryonsUsed: number; remaining: number
+  fittings: number; initialRevenue: number; topupRevenue: number; topups: number; pending: number; periodRevenue: number; totalRevenue: number; estimatedCost: number; storeSales: number
+}
+export type Revenue = {
+  days: number; tryOnCostCents: number
+  totals: { brands: number; mirrors: number; onlineMirrors: number; mrr: number; limitRevenue: number; initialRevenue: number; topupRevenue: number; periodLimitRevenue: number; pending: number; tryonsBought: number; tryonsUsed: number; fittings: number; estimatedCost: number; storeSales: number }
+  brands: BrandRevenue[]; series: { date: string; revenue: number; fittings: number }[]
+}
+
+/** A mirror is low when under 20% of its limit or fewer than 20 try-ons remain. */
+export const isLow = (m: Pick<MirrorPage, "remaining" | "tryonLimit">) => m.tryonLimit === 0 || m.remaining < 20 || m.remaining < m.tryonLimit * 0.2
+export const mirrorOnline = (m: Pick<MirrorPage, "lastSeen">) => Boolean(m.lastSeen && Date.now() - Date.parse(m.lastSeen) < 5 * 60 * 1000)

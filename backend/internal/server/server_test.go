@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"io"
 	"mime/multipart"
+	"mirror/backend/internal/decart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -528,6 +529,85 @@ func TestPostgresAPI(t *testing.T) {
 	}
 	_ = json.Unmarshal(w.Body.Bytes(), &apps)
 	check(jreq("PATCH", "/api/v1/applications/"+apps[0].ID, map[string]string{"status": "APPROVED"}, platform), 200)
+	// Mirror pages: kiosk account, prepaid try-on limit, purchases and revenue.
+	check(jreq("PUT", "/api/v1/subscription?tenantId="+tenantA, map[string]string{"planId": "growth"}, platform), 200)
+	page := map[string]any{"name": "Entrance mirror", "branchId": branchA, "email": "kiosk@example.com", "password": "mirror1234", "packageId": "extra-100"}
+	check(jreq("POST", "/api/v1/mirror-pages", page, staff), 403)
+	w = jreq("POST", "/api/v1/mirror-pages", page, a)
+	check(w, 201)
+	var mirrorPage struct{ ID string }
+	_ = json.Unmarshal(w.Body.Bytes(), &mirrorPage)
+	check(jreq("POST", "/api/v1/mirror-pages", page, a), 409) // e-mail already used
+	kiosk := login("kiosk@example.com", "mirror1234")
+	w = jreq("GET", "/api/v1/auth/me", nil, kiosk)
+	check(w, 200)
+	if !strings.Contains(w.Body.String(), mirrorPage.ID) {
+		t.Fatalf("kiosk account not linked to its mirror: %s", w.Body.String())
+	}
+	check(jreq("POST", "/api/v1/auth/verify-password", map[string]string{"password": "wrong-password"}, kiosk), 403)
+	check(jreq("POST", "/api/v1/auth/verify-password", map[string]string{"password": "mirror1234"}, kiosk), 200)
+	// The first package waits for the platform to confirm payment.
+	fakeDecart := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		jsonResponse(w, 200, map[string]string{"apiKey": "ek_test", "expiresAt": time.Now().Add(60 * time.Second).UTC().Format(time.RFC3339)})
+	}))
+	defer fakeDecart.Close()
+	s.Config.DecartAPIKey, s.Config.DecartEnableRealtime = "server-key", true
+	s.Decart = decart.New("server-key")
+	s.Decart.BaseURL = fakeDecart.URL
+	check(jreq("POST", "/api/v1/decart/token", map[string]any{"consent": true, "productId": product.ID}, kiosk), 409)
+	w = jreq("GET", "/api/v1/limit-purchases?scope=platform", nil, platform)
+	check(w, 200)
+	var purchases []struct {
+		ID, Status, Kind string
+		Tryons           int
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &purchases)
+	if len(purchases) != 1 || purchases[0].Status != "PENDING" || purchases[0].Kind != "INITIAL" || purchases[0].Tryons != 100 {
+		t.Fatalf("purchases: %s", w.Body.String())
+	}
+	check(jreq("PATCH", "/api/v1/limit-purchases/"+purchases[0].ID, map[string]string{"status": "PAID"}, a), 403)
+	check(jreq("PATCH", "/api/v1/limit-purchases/"+purchases[0].ID, map[string]string{"status": "PAID"}, platform), 200)
+	check(jreq("PATCH", "/api/v1/limit-purchases/"+purchases[0].ID, map[string]string{"status": "PAID"}, platform), 409)
+	check(jreq("POST", "/api/v1/decart/token", map[string]any{"consent": true, "productId": product.ID}, kiosk), 200)
+	check(jreq("POST", "/api/v1/orders/checkout", map[string]any{"items": []cartItem{item}}, kiosk), 201)
+	// A top-up sold by the platform is credited at once.
+	check(jreq("POST", "/api/v1/mirror-pages/"+mirrorPage.ID+"/purchases?tenantId="+tenantA, map[string]string{"packageId": "extra-500"}, platform), 201)
+	check(jreq("POST", "/api/v1/mirror-pages/"+mirrorPage.ID+"/purchases", map[string]string{"packageId": "extra-100"}, b), 404)
+	w = jreq("GET", "/api/v1/mirror-pages?days=7", nil, a)
+	check(w, 200)
+	var pages []struct {
+		ID                                       string
+		TryonLimit, TryonsUsed, Remaining, Today int
+		Requests                                 int
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &pages)
+	var found bool
+	for _, p := range pages {
+		if p.ID == mirrorPage.ID {
+			found = p.TryonLimit == 600 && p.TryonsUsed == 1 && p.Remaining == 599 && p.Today == 1 && p.Requests == 1
+		}
+	}
+	if !found {
+		t.Fatalf("mirror page stats: %s", w.Body.String())
+	}
+	check(jreq("GET", "/api/v1/platform/revenue", nil, a), 403)
+	w = jreq("GET", "/api/v1/platform/revenue?days=30", nil, platform)
+	check(w, 200)
+	var revenue struct {
+		Totals struct{ LimitRevenue, InitialRevenue, TopupRevenue float64 }
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &revenue)
+	if revenue.Totals.InitialRevenue != 100 || revenue.Totals.TopupRevenue != 450 || revenue.Totals.LimitRevenue != 550 {
+		t.Fatalf("revenue: %s", w.Body.String())
+	}
+	check(jreq("PATCH", "/api/v1/credit-packages/extra-100", map[string]int{"priceCents": 9000, "credits": 100}, platform), 200)
+	check(jreq("PATCH", "/api/v1/mirror-pages/"+mirrorPage.ID, map[string]string{"name": "Window mirror"}, a), 200)
+	// When the limit runs out the mirror stops starting AI sessions.
+	if _, e := db.Exec(ctx, "UPDATE mirror.devices SET tryons_used=tryon_limit WHERE id=$1", mirrorPage.ID); e != nil {
+		t.Fatal(e)
+	}
+	check(jreq("POST", "/api/v1/decart/token", map[string]any{"consent": true}, kiosk), 409)
+	s.Config.DecartEnableRealtime = false
 	if _, e := db.Exec(ctx, "UPDATE mirror.subscriptions SET expires_at=now()-interval '1 minute' WHERE tenant_id=$1", tenantB); e != nil {
 		t.Fatal(e)
 	}

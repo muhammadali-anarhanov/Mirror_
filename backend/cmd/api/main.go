@@ -88,6 +88,11 @@ func run() error {
 		return errors.New("unknown command")
 	}
 	var migrated bool
+	// Apply pending migrations on start (transactional and advisory-locked), so a
+	// deploy without a separate migrate step still gets the new schema.
+	if e = database.Migrate(ctx, db, migrations.Files); e != nil {
+		slog.Error("automatic migration failed; run the migrate command", "type", e.Error())
+	}
 	if c.ServiceKey != "" {
 		if e = s.Storage.CheckBucket(ctx, c.ProductBucket, true); e != nil {
 			return e

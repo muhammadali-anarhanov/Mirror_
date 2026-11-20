@@ -37,6 +37,8 @@ export function decartError(error: unknown): string {
     : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name}${safeDetail(error)})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
 }
 
+export const LIMIT_MESSAGE = "This mirror has used all its AI try-ons. Ask the store staff to top up the limit.";
+
 /** How far this device's clock runs ahead of the server (ms); 0 when unknown or behind. */
 export function clockSkew(expiresAt: string, dateHeader: string | null, now = Date.now()) {
   const fromHeader = Date.parse(dateHeader || "")
@@ -93,7 +95,7 @@ export class DecartFittingSession {
   private prompt(product: DecartGarment) {
     return `Substitute the corresponding clothing with the garment shown in the reference image: ${product.name.slice(0, 160)}. Preserve the person and background.`;
   }
-  async start(product: DecartGarment) {
+  async start(product: DecartGarment, deviceId = "") {
     this.stop(false);
     const epoch = this.epoch;
     if (product.demo) { this.fail("Select a real catalog garment. Demo images cannot be used for AI fitting."); return; }
@@ -113,10 +115,11 @@ export class DecartFittingSession {
       const sdk = await this.deps.loadSDK();
       if (epoch !== this.epoch) return;
       this.deps.state("connecting");
-      const response = await this.deps.request("/decart/token", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({consent: true, productId: product.id})});
+      const response = await this.deps.request("/decart/token", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({consent: true, productId: product.id, ...(deviceId ? {deviceId} : {})})});
       if (epoch !== this.epoch) return;
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
+        if (body.error === "mirror try-on limit reached") { this.fail(LIMIT_MESSAGE); return; }
         const status = typeof body.providerStatus === "number" ? ` (Decart HTTP ${body.providerStatus})` : ` (HTTP ${response.status})`;
         this.fail(`AI fitting token unavailable${status}. Check sign-in, DECART_ENABLE_REALTIME, API key, model access and billing.`); return;
       }

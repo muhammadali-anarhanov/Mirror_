@@ -2,7 +2,7 @@
 export type ConsoleKind = "super-admin" | "brand" | "staff"
 
 export const CONSOLE_SECTIONS: Record<ConsoleKind, string[]> = {
-  "super-admin": ["dashboard", "applications", "brands", "subscriptions", "audit-logs", "account"],
+  "super-admin": ["dashboard", "revenue", "applications", "brands", "subscriptions", "audit-logs", "account"],
   brand: ["dashboard", "products", "inventory", "orders", "branches", "devices", "staff", "subscription", "notifications", "audit-logs", "account"],
   staff: ["dashboard", "products", "inventory", "orders", "devices", "notifications", "account"],
 }

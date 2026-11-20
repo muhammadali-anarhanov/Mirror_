@@ -4381,3 +4381,15 @@ body:has(.mirror-auth-page) {
 .marketing-shell a[class*="rounded-full"]:hover, .marketing-shell button[class*="rounded-full"]:hover:not(:disabled) { transform: translateY(-1px); }
 @keyframes mk-hero { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .mk-reveal { opacity: 1; transform: none; transition: none; } .marketing-shell main > section:first-child { animation: none; } }
+
+/* Kiosk exit: the mirror's password is required to sign out. */
+.mirror-room .mirror-exit-button { color: #fff; }
+.mirror-exit-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(13, 20, 40, 0.55); backdrop-filter: blur(8px); }
+.mirror-exit-dialog { width: min(400px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 20px; background: #fff; color: #0d1a3a; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.3); animation: mirror-auth-rise 240ms ease both; }
+.mirror-exit-dialog h2 { margin: 0; font-size: 20px; }
+.mirror-exit-dialog p { margin: 0; color: #5a6a8a; font-size: 14px; }
+.mirror-exit-dialog input { min-height: 46px; padding: 0 14px; border: 1px solid #cdd8ee; border-radius: 12px; font: inherit; font-size: 16px; }
+.mirror-exit-dialog input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15); }
+.mirror-exit-dialog .mirror-inline-error { color: #b91c1c; }
+.mirror-exit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.mirror-exit-actions .mirror-secondary-button { color: #0d1a3a; border-color: #cdd8ee; background: #fff; }

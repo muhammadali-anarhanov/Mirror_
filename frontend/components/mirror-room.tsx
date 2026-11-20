@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type FormEvent,
   type TouchEvent,
   type WheelEvent,
 } from "react";
@@ -26,7 +27,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Trash2,
-  UserRound,
+  LogOut,
   X,
 } from "lucide-react";
 import { useMarketingLanguage } from "./marketing-language";
@@ -296,6 +297,39 @@ function CartPanel({
   );
 }
 
+/** Leaving the kiosk needs the kiosk account's password, so customers cannot sign it out. */
+function ExitDialog({ onClose }: { onClose: () => void }) {
+  const t = useText();
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true); setError("");
+    try {
+      const check = await apiFetch("/auth/verify-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+      if (!check.ok) { setError(check.status === 429 ? "Too many attempts. Wait 15 minutes and try again." : "Wrong password."); return; }
+      await apiFetch("/auth/logout", { method: "POST" }).catch(() => null);
+      try { sessionStorage.removeItem("mirror-shopping-cart"); } catch { /* storage disabled */ }
+      window.location.assign("/login");
+    } finally { setBusy(false); }
+  }
+  return (
+    <div className="mirror-exit-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <form className="mirror-exit-dialog" role="dialog" aria-modal="true" aria-label={t("Exit the smart mirror")} onSubmit={submit}>
+        <h2>{t("Exit the smart mirror")}</h2>
+        <p>{t("Enter the mirror's password to sign out.")}</p>
+        <input type="password" autoFocus autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("Password")} aria-label={t("Password")} />
+        {error && <p className="mirror-inline-error" role="alert">{t(error)}</p>}
+        <div className="mirror-exit-actions">
+          <button type="button" className="mirror-secondary-button" onClick={onClose}>{t("Cancel")}</button>
+          <button type="submit" className="mirror-primary-button" disabled={busy || !password}><LogOut aria-hidden="true" />{t("Sign out")}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function MirrorRoom() {
   const t = useText();
 
@@ -322,11 +356,18 @@ export default function MirrorRoom() {
   const [kioskBranches, setKioskBranches] = useState<{ id: string; name: string }[]>([]);
   const [kioskBranch, setKioskBranch] = useState("");
   const [stockNotice, setStockNotice] = useState("");
+  // The kiosk account's own mirror, else one opened with ?device=<id>.
+  const [deviceId, setDeviceId] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const me = await apiFetch("/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      if (cancelled || !me?.user || me.user.branchId) return;
+      if (cancelled || !me?.user) return;
+      setSignedIn(true);
+      if (me.device?.id) setDeviceId(me.device.id);
+      if (me.user.branchId) return;
       const list = await apiFetch("/branches").then((r) => (r.ok ? r.json() : [])).catch(() => []);
       if (cancelled || !Array.isArray(list) || !list.length) return;
       setKioskBranches(list.filter((b: { status?: string }) => b.status !== "INACTIVE"));
@@ -340,20 +381,23 @@ export default function MirrorRoom() {
     setKioskBranch(id);
     try { localStorage.setItem("mirror-branch", id); } catch { /* storage disabled */ }
   };
-  // A registered smart mirror (?device=<id>) reports online every minute.
   useEffect(() => {
-    let device = "";
     try {
       const fromUrl = new URLSearchParams(window.location.search).get("device") || "";
       if (/^[0-9a-f-]{36}$/i.test(fromUrl)) localStorage.setItem("mirror-device", fromUrl);
-      device = localStorage.getItem("mirror-device") || "";
+      const stored = localStorage.getItem("mirror-device") || "";
+      if (/^[0-9a-f-]{36}$/i.test(stored)) setDeviceId((current) => current || stored);
     } catch { /* storage disabled */ }
+  }, []);
+  // The smart mirror reports online every minute.
+  useEffect(() => {
+    const device = deviceId;
     if (!/^[0-9a-f-]{36}$/i.test(device)) return;
     const beat = () => { void apiFetch(`/devices/${device}/heartbeat`, { method: "POST" }).catch(() => null); };
     beat();
     const timer = setInterval(beat, 60000);
     return () => clearInterval(timer);
-  }, []);
+  }, [deviceId]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const {language,setLanguage} = useMarketingLanguage();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
@@ -534,7 +578,7 @@ export default function MirrorRoom() {
       const response = await apiFetch("/orders/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variantId, qty: item.quantity })), ...(kioskBranch ? { branchId: kioskBranch } : {}) }),
+        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variantId, qty: item.quantity })), ...(kioskBranch ? { branchId: kioskBranch } : {}), ...(deviceId ? { deviceId } : {}) }),
       });
       if (response.status === 409) { setStockNotice("Some items are no longer in stock in this branch. Remove them and try again."); throw new Error("Out of stock"); }
       if (!response.ok) throw new Error(`Checkout request failed (${response.status}).`);
@@ -629,9 +673,11 @@ export default function MirrorRoom() {
             )}
           </AnimatePresence>
         </div>
-        <a className="mirror-icon-button mirror-profile-button" href="/login" aria-label={strings.customer} title={strings.customer}>
-          <UserRound aria-hidden="true" />
-        </a>
+        {signedIn && (
+          <button type="button" className="mirror-icon-button mirror-exit-button" onClick={() => setExitOpen(true)} aria-label={t("Exit")} title={t("Exit")}>
+            <LogOut aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       <aside className="mirror-side-nav" aria-label={labels.mainNavigation}>
@@ -690,7 +736,7 @@ export default function MirrorRoom() {
           </>
         )}
 
-        <MirrorLiveFitting product={currentProduct} mediaHost={mediaHost} onLiveChange={setCameraLive} controlRef={fittingControl} />
+        <MirrorLiveFitting deviceId={deviceId} product={currentProduct} mediaHost={mediaHost} onLiveChange={setCameraLive} controlRef={fittingControl} />
 
         {productStatus && (
           <div className={`mirror-catalog-status ${productError ? "has-error" : ""}`} role={productError ? "alert" : "status"}>
@@ -775,6 +821,7 @@ export default function MirrorRoom() {
       )}
 
       {cartNotice && !isCartOpen && !currentProduct && <p className="mirror-floating-notice" role="status">{strings[cartNotice]}</p>}
+      {exitOpen && <ExitDialog onClose={() => setExitOpen(false)} />}
       <AnimatePresence>
         {isCartOpen && (
         <CartPanel

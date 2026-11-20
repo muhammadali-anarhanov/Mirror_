@@ -228,6 +228,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 	var b struct {
 		Items    []cartItem `json:"items"`
 		BranchID string     `json:"branchId"`
+		DeviceID string     `json:"deviceId"`
 	}
 	if !decode(w, r, &b) {
 		return
@@ -256,7 +257,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 	id := uuid()
-	_, e = tx.Exec(r.Context(), "INSERT INTO mirror.orders(id,tenant_id,user_id,branch_id) VALUES($1,$2,$3,$4)", id, u.TenantID, u.ID, branch)
+	_, e = tx.Exec(r.Context(), "INSERT INTO mirror.orders(id,tenant_id,user_id,branch_id,device_id) VALUES($1,$2,$3,$4,NULLIF($5,'')::uuid)", id, u.TenantID, u.ID, branch, s.kioskDevice(r.Context(), u, b.DeviceID))
 	if e != nil {
 		s.dbError(w, e)
 		return

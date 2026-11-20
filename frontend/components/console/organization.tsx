@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, KeyRound, MonitorSmartphone, Pencil, Plus, Store, UserPlus, Users } from "lucide-react"
+import { Copy, KeyRound, Pencil, Plus, Store, UserPlus, Users } from "lucide-react"
 import { useText } from "@/components/marketing-language"
-import { formatDate, generatePassword, isOnline, scoped, send, useApi, type Branch, type ConsoleUser, type Device, type Me, type Role } from "@/lib/console/api"
-import { Empty, ErrorNote, Field, Modal, PageHeader, Skeletons, Stat, Status, useAction, useLocale, useToast } from "./ui"
+import { generatePassword, scoped, send, useApi, type Branch, type ConsoleUser, type Role } from "@/lib/console/api"
+import { Empty, ErrorNote, Field, Modal, PageHeader, Skeletons, Status, useAction, useToast } from "./ui"
 
 export function Branches({ tenantId }: { tenantId?: string }) {
   const t = useText()
@@ -45,62 +45,6 @@ function BranchDialog({ branch, tenantId, onClose, onDone }: { branch?: Branch; 
       <Field label={t("Address")}><input className="cx-input" value={address} onChange={(e) => setAddress(e.target.value)} /></Field>
       {branch && <Field label={t("Status")}><select className="cx-select" value={status} onChange={(e) => setStatus(e.target.value)}><option value="ACTIVE">{t("Active")}</option><option value="INACTIVE">{t("Inactive")}</option></select></Field>}
       {!branch && <p className="cx-muted cx-small">{t("The number of branches is limited by the subscription plan.")}</p>}
-    </Modal>
-  )
-}
-
-export function Devices({ me }: { me: Me }) {
-  const t = useText()
-  const locale = useLocale()
-  const toast = useToast()
-  const devices = useApi<Device[]>("/devices", { refreshInterval: 30000 })
-  const branches = useApi<Branch[]>("/branches")
-  const [adding, setAdding] = useState(false)
-  const canAdd = me.role === "BRAND_ADMIN"
-  const branchName = new Map((branches.data ?? []).map((b) => [b.id, b.name]))
-  const online = (devices.data ?? []).filter(isOnline).length
-  async function copyLink(d: Device) {
-    const link = `${window.location.origin}/mirror?device=${d.id}`
-    try { await navigator.clipboard.writeText(link); toast(t("Kiosk link copied")) } catch { window.prompt(t("Kiosk link"), link) }
-  }
-  return (
-    <>
-      <PageHeader eyebrow={t("Hardware")} title={t("Smart mirrors")} description={t("Open the kiosk link on the mirror's computer. It reports online every minute while the fitting room is open.")}>{canAdd && <button type="button" className="cx-btn is-primary" onClick={() => setAdding(true)}><Plus aria-hidden="true" />{t("Add mirror")}</button>}</PageHeader>
-      <div className="cx-stats">
-        <Stat index={0} tone="hero" icon={MonitorSmartphone} label={t("Mirrors online")} value={devices.data ? online : undefined} note={t("of {count} smart mirrors", { count: devices.data?.length ?? 0 })} />
-      </div>
-      <ErrorNote error={devices.error} />
-      {!devices.data && !devices.error ? <Skeletons count={2} /> : !devices.data?.length ? (
-        <div className="cx-card"><Empty icon={MonitorSmartphone} title={t("No smart mirrors yet")} text={t("Register a mirror, then open its kiosk link on the mirror screen.")} /></div>
-      ) : (
-        <div className="cx-card cx-table-wrap"><table className="cx-table">
-          <thead><tr><th>{t("Name")}</th><th>{t("Branch")}</th><th>{t("Status")}</th><th>{t("Last seen")}</th><th className="is-num">{t("Actions")}</th></tr></thead>
-          <tbody>{devices.data.map((d) => <tr key={d.id}>
-            <td className="cx-strong">{isOnline(d) && <span className="cx-dot-live" style={{ marginInlineEnd: 8 }} />}{d.name}</td>
-            <td>{branchName.get(d.branch_id) ?? "—"}</td><td><Status value={isOnline(d) ? "ONLINE" : "OFFLINE"} /></td>
-            <td className="cx-small cx-muted">{formatDate(d.last_seen, locale)}</td>
-            <td><div className="cx-row-actions"><button type="button" className="cx-btn is-sm" onClick={() => copyLink(d)}><Copy aria-hidden="true" />{t("Copy kiosk link")}</button><a className="cx-btn is-sm is-primary" href={`/mirror?device=${d.id}`} target="_blank" rel="noreferrer">{t("Open")}</a></div></td>
-          </tr>)}</tbody>
-        </table></div>
-      )}
-      {adding && <DeviceDialog branches={branches.data ?? []} onClose={() => setAdding(false)} onDone={() => { setAdding(false); void devices.mutate() }} />}
-    </>
-  )
-}
-
-function DeviceDialog({ branches, onClose, onDone }: { branches: Branch[]; onClose: () => void; onDone: () => void }) {
-  const t = useText()
-  const [name, setName] = useState("")
-  const [branchId, setBranchId] = useState(branches[0]?.id ?? "")
-  const [layout, setLayout] = useState("landscape")
-  const { busy, run } = useAction()
-  return (
-    <Modal title={t("Add mirror")} onClose={onClose} footer={<><button type="button" className="cx-btn" onClick={onClose}>{t("Cancel")}</button><button type="button" className="cx-btn is-primary" disabled={busy || !name.trim() || !branchId} onClick={() => run(async () => { await send("/devices", "POST", { name, branchId, configuration: { layout } }); onDone() }, "Mirror added")}>{t("Save")}</button></>}>
-      {!branches.length && <p className="cx-error">{t("Create a branch first.")}</p>}
-      <Field label={t("Name")}><input className="cx-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("For example: Entrance mirror")} autoFocus /></Field>
-      <Field label={t("Branch")}><select className="cx-select" value={branchId} onChange={(e) => setBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
-      <Field label={t("Screen")}><select className="cx-select" value={layout} onChange={(e) => setLayout(e.target.value)}><option value="landscape">{t("Landscape")}</option><option value="portrait">{t("Portrait")}</option></select></Field>
-      <p className="cx-muted cx-small">{t("The number of mirrors is limited by the subscription plan.")}</p>
     </Modal>
   )
 }

@@ -6,8 +6,9 @@ import {
   AlertTriangle, Boxes, Building2, ClipboardList, DollarSign, MonitorSmartphone, Package, Receipt, ShoppingBag, Sparkles, Store, Users,
 } from "lucide-react"
 import { useText } from "@/components/marketing-language"
-import { money, useApi, type Analytics, type Application, type Me, type PlatformStats } from "@/lib/console/api"
+import { money, useApi, type Analytics, type Application, type Me, type PlatformStats, type Revenue } from "@/lib/console/api"
 import { RankList, TrendChart } from "./charts"
+import { MirrorSummary } from "./mirrors"
 import { Card, ErrorNote, PageHeader, Segment, Skeletons, Stat, Status, useLocale } from "./ui"
 
 const PERIODS = [7, 30, 90] as const
@@ -42,6 +43,7 @@ export function BrandOverview({ me }: { me: Me }) {
             <Stat index={6} tone={data.lowStock ? "warn" : undefined} icon={AlertTriangle} label={t("Low stock")} value={data.lowStock} note={t("Variants with 3 or fewer")} />
             <Stat index={7} icon={MonitorSmartphone} label={t("Mirrors online")} value={data.activeDevices} note={t("of {count} smart mirrors", { count: data.devices })} />
           </div>
+          <MirrorSummary days={days} />
           <div className="cx-layout-2">
             <Card title={t("Activity")} description={t("Daily AI try-ons and cashier requests")}>
               <TrendChart data={data.series} lines={[{ key: "fittings", label: "AI try-ons", color: "#2563eb" }, { key: "orders", label: "Cashier requests", color: "#38bdf8" }]} />
@@ -70,6 +72,7 @@ export function PlatformOverview() {
   const { days, control } = usePeriod()
   const { data, error } = useApi<PlatformStats>(`/platform/stats?days=${days}`, { refreshInterval: 60000 })
   const applications = useApi<Application[]>("/applications")
+  const revenue = useApi<Revenue>(`/platform/revenue?days=${days}`)
   return (
     <>
       <PageHeader eyebrow={t("MIRROR platform")} title={t("Platform statistics")} description={t("Every brand, branch and smart mirror in one view.")}>{control}</PageHeader>
@@ -78,6 +81,7 @@ export function PlatformOverview() {
         <>
           <div className="cx-stats">
             <Stat index={0} tone="hero" icon={DollarSign} label={t("Monthly recurring revenue")} value={data.mrr} format={(n) => money(n, locale)} note={t("Active subscriptions")} />
+            <Stat index={1} tone="good" icon={DollarSign} label={t("Try-on package sales")} value={revenue.data?.totals.limitRevenue} format={(n) => money(n, locale)} note={t("{amount} awaiting payment", { amount: money(revenue.data?.totals.pending ?? 0, locale) })} />
             <Stat index={1} icon={Building2} label={t("Brands")} value={data.brands} note={t("{active} active · {suspended} suspended", { active: data.activeBrands, suspended: data.suspendedBrands })} />
             <Stat index={2} tone={data.newApplications ? "warn" : undefined} icon={ClipboardList} label={t("Open applications")} value={data.newApplications} note={t("{count} received in total", { count: data.applications })} />
             <Stat index={3} icon={Sparkles} label={t("AI try-ons")} value={data.fittings} note={t("In this period")} />

@@ -5,9 +5,10 @@ import { Building2, CalendarPlus, ClipboardList, Coins, Mail, Phone, Plus, Searc
 import { useText } from "@/components/marketing-language"
 import {
   formatDate, generatePassword, money, scoped, send, useApi,
-  type Application, type Brand, type Plan, type Subscription,
+  type Application, type Brand, type Me, type Plan, type Subscription,
 } from "@/lib/console/api"
 import { Branches, SecretBox, Staff } from "./organization"
+import { MirrorPages } from "./mirrors"
 import { Card, Empty, ErrorNote, Field, Modal, PageHeader, Segment, Skeletons, Stat, Status, useAction, useLocale } from "./ui"
 
 const APP_STATUSES = ["NEW", "REVIEWING", "MORE_INFORMATION_REQUIRED", "APPROVED", "REJECTED", "CLOSED"]
@@ -154,7 +155,11 @@ export function Brands() {
   )
 }
 
+// The brand drawer is only reachable from the Super Admin console.
+const PLATFORM_ME: Me = { id: "", tenantId: "", branchId: "", email: "", role: "SUPER_ADMIN", status: "ACTIVE" }
+
 function BrandDrawer({ brand, onClose }: { brand: Brand; onClose: () => void }) {
+  const me = PLATFORM_ME
   const t = useText()
   const locale = useLocale()
   const [tab, setTab] = useState("plan")
@@ -172,7 +177,7 @@ function BrandDrawer({ brand, onClose }: { brand: Brand; onClose: () => void }) 
   }
   return (
     <Modal drawer wide title={brand.name} onClose={onClose} footer={<button type="button" className={`cx-btn${status === "ACTIVE" ? " is-danger" : " is-primary"}`} disabled={busy} onClick={changeStatus}>{status === "ACTIVE" ? t("Suspend brand") : t("Activate brand")}</button>}>
-      <div className="cx-toolbar"><Status value={status} /><Segment label={t("Section")} value={tab} onChange={setTab} options={[{ value: "plan", label: t("Subscription") }, { value: "branches", label: t("Branches") }, { value: "staff", label: t("Accounts") }]} /></div>
+      <div className="cx-toolbar"><Status value={status} /><Segment label={t("Section")} value={tab} onChange={setTab} options={[{ value: "plan", label: t("Subscription") }, { value: "mirrors", label: t("Mirror pages") }, { value: "branches", label: t("Branches") }, { value: "staff", label: t("Accounts") }]} /></div>
       {tab === "plan" && <>
         <ErrorNote error={sub.error} />
         {s && <div className="cx-card"><div className="cx-card-body"><dl className="cx-kv">
@@ -191,6 +196,7 @@ function BrandDrawer({ brand, onClose }: { brand: Brand; onClose: () => void }) 
           <button type="button" className="cx-btn" disabled={busy} onClick={() => run(async () => { await send(scoped("/credits", brand.id), "POST", { amount: credits, reference: `console-${Date.now()}` }); await sub.mutate() }, "Credits added")}><Coins aria-hidden="true" />{t("Add extra try-ons")}</button>
         </div>
       </>}
+      {tab === "mirrors" && <MirrorPages me={me} tenantId={brand.id} />}
       {tab === "branches" && <Branches tenantId={brand.id} />}
       {tab === "staff" && <Staff tenantId={brand.id} />}
     </Modal>
