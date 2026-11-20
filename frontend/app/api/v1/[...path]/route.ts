@@ -8,7 +8,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   const base = process.env.BACKEND_URL
   if (!base) return Response.json({ error: "Backend is not configured", submitted: false }, { status: 503 })
   const { path } = await params
-  const allowed = new Set(["decart", "auth", "products", "admin", "images", "brands", "branches", "users", "devices", "inventory", "plans", "credit-packages", "subscription", "credits", "cart", "orders", "analytics", "notifications", "audit-logs", "applications"])
+  const allowed = new Set(["decart", "auth", "products", "admin", "images", "brands", "branches", "users", "devices", "inventory", "plans", "credit-packages", "subscription", "credits", "cart", "orders", "analytics", "notifications", "audit-logs", "applications", "platform", "mirror-pages", "limit-purchases"])
   if (!path.length || !allowed.has(path[0]) || path.some(p => !/^[a-zA-Z0-9-]+$/.test(p))) return Response.json({ error: "Not found" }, { status: 404 })
   const headers = new Headers()
   for (const key of ["content-type", "cookie", "authorization", "idempotency-key", "origin"]) {

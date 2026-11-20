@@ -30,11 +30,6 @@ func (s *Server) list(w http.ResponseWriter, r *http.Request, query string, args
 	}
 	jsonResponse(w, 200, out)
 }
-func (s *Server) brands(w http.ResponseWriter, r *http.Request) {
-	u := current(r)
-	s.list(w, r, "SELECT to_jsonb(t) FROM mirror.tenants t WHERE ($1='SUPER_ADMIN' OR id=NULLIF($2,'')::uuid) ORDER BY created_at DESC LIMIT 500", u.Role, u.TenantID)
-}
-
 func (s *Server) updateBrand(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	var b struct {

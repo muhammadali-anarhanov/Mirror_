@@ -50,16 +50,17 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setFeedback("The passwords do not match. Check both fields and try again.")
       return
     }
-    if (mode !== "login") { setFeedback("Account recovery requires a configured email provider. Contact your administrator."); return }
+    if (mode !== "login") { setFeedback("Ask your brand admin or the MIRROR team to set a new password for you. Signed-in users can change it under Account."); return }
     const form = new FormData(event.currentTarget)
     try {
       const response = await apiFetch("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.get("email"), password }) })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || "Sign-in failed")
-      setFeedback("Signed in. Your session is ready; admin modules that still show sample data remain previews.")
-      // Keep preview consoles gated in production until their sample modules are migrated.
-      const liveCatalog = data.user.role === "BRAND_ADMIN"
-      window.location.assign(safeNextPath(window.location.search) ?? (liveCatalog ? "/brand/products" : process.env.NODE_ENV === "production" ? "/mirror" : dashboardPathForRole(data.user.role as PlatformRole)))
+      if (!response.ok) throw new Error(response.status === 401 ? "Wrong email or password." : response.status === 429 ? "Too many attempts. Wait 15 minutes and try again." : data.error || "Sign-in failed")
+      setFeedback("Signed in. Opening your workspace…")
+      // A smart-mirror account opens the fitting room, not a console.
+      const me = await apiFetch("/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      const kiosk = Boolean(me?.device?.id)
+      window.location.assign(kiosk ? "/mirror" : safeNextPath(window.location.search) ?? dashboardPathForRole(data.user.role as PlatformRole))
     } catch (error) { setFeedback(error instanceof Error ? error.message : "Sign-in failed") }
   }
 
@@ -83,7 +84,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           </div>
           <div className="mirror-auth-api-note" role="status">
             <LockKeyhole aria-hidden="true" />
-            <span>{mode === "login" ? t("Sign in securely through the MIRROR backend.") : t("Account recovery requires a configured email provider.")}</span>
+            <span>{mode === "login" ? t("Super admins, brand admins and store staff sign in here.") : t("Passwords are reset by your brand admin or the MIRROR team.")}</span>
           </div>
 
           <form className="mirror-auth-form" onSubmit={handleSubmit}>

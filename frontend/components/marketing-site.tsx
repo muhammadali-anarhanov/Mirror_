@@ -1,6 +1,7 @@
 "use client";
 
 
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { useText } from "@/components/marketing-language";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -42,6 +43,7 @@ export function MarketingSiteShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="marketing-shell min-h-screen" dir={language === "AR" ? "rtl" : "ltr"}>
+      <ScrollReveal />
       <a
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-background focus:px-4 focus:py-3 focus:text-foreground focus:shadow-lg"
         href="#main-content"

@@ -21,6 +21,8 @@ function safeDetail(error: unknown): string {
   return text ? `: ${text}` : "";
 }
 
+export const CLOCK_MESSAGE = "This device's clock is wrong, so Decart rejects the fitting token as expired. Turn on automatic date and time (Windows: Settings → Time & language → Set time automatically → Sync now), reload the page and start again.";
+
 // Provider errors can include URLs/tokens. Surface only safe SDK codes.
 export function decartError(error: unknown): string {
   const name = (error as {name?: unknown})?.name;
@@ -29,9 +31,31 @@ export function decartError(error: unknown): string {
   if (name === "NotReadableError") return "Camera is unavailable or in use by another application. Release it and start again.";
   if (name === "TypeError") return "Network or camera request failed. Check your connection and use HTTPS or localhost.";
   const code = (error as {code?: unknown})?.code;
+  if (code === "TOKEN_EXPIRED") return CLOCK_MESSAGE;
   return typeof code === "string" && /^[A-Z][A-Z0-9_]{1,60}$/.test(code)
     ? `Decart error: ${code}. Check model access, billing and network, then start again.`
     : `AI fitting could not continue${typeof name === "string" && /^[A-Za-z]{2,40}$/.test(name) ? ` (${name}${safeDetail(error)})` : ""}. Check camera permission, authentication and Decart configuration, then start again.`;
+}
+
+export const LIMIT_MESSAGE = "This mirror has used all its AI try-ons. Ask the store staff to top up the limit.";
+
+/** How far this device's clock runs ahead of the server (ms); 0 when unknown or behind. */
+export function clockSkew(expiresAt: string, dateHeader: string | null, now = Date.now()) {
+  const fromHeader = Date.parse(dateHeader || "")
+  const exp = Date.parse(expiresAt)
+  const serverNow = Number.isFinite(fromHeader) ? fromHeader + 500 : Number.isFinite(exp) ? exp - SESSION_SECONDS * 1000 : NaN
+  return Number.isFinite(serverNow) ? Math.max(0, now - serverNow) : 0
+}
+
+/**
+ * Shows server time through Date.now until the current task ends. The SDK's
+ * expiry check runs in the microtask right after the key provider resolves.
+ */
+export function useServerClockBriefly(skew: number) {
+  const real = Date.now
+  const shifted = () => real.call(Date) - skew
+  Date.now = shifted
+  setTimeout(() => { if (Date.now === shifted) Date.now = real }, 0)
 }
 
 export class DecartFittingSession {
@@ -71,7 +95,7 @@ export class DecartFittingSession {
   private prompt(product: DecartGarment) {
     return `Substitute the corresponding clothing with the garment shown in the reference image: ${product.name.slice(0, 160)}. Preserve the person and background.`;
   }
-  async start(product: DecartGarment) {
+  async start(product: DecartGarment, deviceId = "") {
     this.stop(false);
     const epoch = this.epoch;
     if (product.demo) { this.fail("Select a real catalog garment. Demo images cannot be used for AI fitting."); return; }
@@ -91,10 +115,11 @@ export class DecartFittingSession {
       const sdk = await this.deps.loadSDK();
       if (epoch !== this.epoch) return;
       this.deps.state("connecting");
-      const response = await this.deps.request("/decart/token", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({consent: true})});
+      const response = await this.deps.request("/decart/token", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({consent: true, productId: product.id, ...(deviceId ? {deviceId} : {})})});
       if (epoch !== this.epoch) return;
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
+        if (body.error === "mirror try-on limit reached") { this.fail(LIMIT_MESSAGE); return; }
         const status = typeof body.providerStatus === "number" ? ` (Decart HTTP ${body.providerStatus})` : ` (HTTP ${response.status})`;
         this.fail(`AI fitting token unavailable${status}. Check sign-in, DECART_ENABLE_REALTIME, API key, model access and billing.`); return;
       }
@@ -111,8 +136,14 @@ export class DecartFittingSession {
       const serverLifetime = Date.parse(token.expiresAt) - Date.parse(response.headers.get("Date") || "");
       const lifetime = Number.isFinite(serverLifetime) && serverLifetime > 0 ? Math.min(serverLifetime, SESSION_SECONDS * 1000) : SESSION_SECONDS * 1000;
       const tokenExpiry = Date.now() + lifetime;
+      // The Decart SDK checks the token expiry against this device's clock before it
+      // dials and refuses with TOKEN_EXPIRED when the clock runs fast. Estimate the
+      // server time (Date header, else expiry minus the 60 s token lifetime) and
+      // present it to the SDK for that check only.
+      const skew = clockSkew(token.expiresAt, response.headers.get("Date"));
       const client = sdk.createDecartClient({logger: sdk.noopLogger, telemetry: false, apiKeyProvider: async () => {
         if (epoch !== this.epoch || !(tokenExpiry - 2000 > Date.now())) throw new Error("Explicit restart required");
+        if (skew > 2000) useServerClockBriefly(skew);
         return token.apiKey;
       }});
       const options: RealTimeClientConnectOptions = {

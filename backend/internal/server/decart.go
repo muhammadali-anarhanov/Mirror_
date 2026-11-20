@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"mirror/backend/internal/decart"
 	"net/http"
 	"strconv"
@@ -21,7 +23,9 @@ func (s *Server) decartToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Consent bool `json:"consent"`
+		Consent   bool   `json:"consent"`
+		ProductID string `json:"productId"`
+		DeviceID  string `json:"deviceId"`
 	}
 	if !decode(w, r, &input) {
 		return
@@ -42,7 +46,27 @@ func (s *Server) decartToken(w http.ResponseWriter, r *http.Request) {
 			origin = o[0]
 		}
 	}
+	// A mirror page uses one try-on from its prepaid limit per fitting start.
+	device := ""
+	if s.DB != nil {
+		device = s.kioskDevice(r.Context(), u, input.DeviceID)
+	}
+	if device != "" {
+		tag, e := s.DB.Exec(r.Context(), "UPDATE mirror.devices SET tryons_used=tryons_used+1 WHERE id=$1 AND tryons_used<tryon_limit", device)
+		if e != nil {
+			s.dbError(w, e)
+			return
+		}
+		if tag.RowsAffected() != 1 {
+			problem(w, 409, "mirror try-on limit reached")
+			return
+		}
+	}
 	token, err := s.Decart.CreateToken(r.Context(), origin)
+	if err != nil && device != "" {
+		// No session was opened: give the try-on back.
+		_, _ = s.DB.Exec(r.Context(), "UPDATE mirror.devices SET tryons_used=tryons_used-1 WHERE id=$1 AND tryons_used>0", device)
+	}
 	if err != nil {
 		var provider *decart.ProviderError
 		if errors.As(err, &provider) {
@@ -52,6 +76,17 @@ func (s *Server) decartToken(w http.ResponseWriter, r *http.Request) {
 		}
 		problem(w, 502, "Decart token service unavailable or returned an invalid response")
 		return
+	}
+	// Record the fitting start for statistics; failures must not block the session.
+	product := ""
+	if validID(input.ProductID) {
+		product = input.ProductID
+	}
+	details, _ := json.Marshal(map[string]string{"productId": product, "branchId": u.BranchID, "deviceId": device})
+	if s.DB == nil {
+		// Unit tests run without a database.
+	} else if _, e := s.DB.Exec(r.Context(), "INSERT INTO mirror.audit_logs(tenant_id,actor_id,action,details) VALUES($1,$2,'fitting.start',$3)", u.TenantID, u.ID, string(details)); e != nil {
+		slog.Warn("fitting statistics not recorded", "type", errorType(e))
 	}
 	jsonResponse(w, 200, map[string]any{"apiKey": token.APIKey, "expiresAt": token.ExpiresAt, "model": decart.Model, "maxSessionSeconds": decart.MaxSessionSeconds})
 }
