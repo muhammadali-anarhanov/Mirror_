@@ -51,7 +51,7 @@ export function MarketingSiteShell({ children }: { children: ReactNode }) {
         {copy.navigation.skip}
       </a>
       <div className="flex min-h-screen flex-col">
-        <header className="relative z-20 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+        <header className="marketing-header sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
           <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
             <Link className="flex shrink-0 flex-col leading-none" href="/" aria-label={copy.navigation.homeLabel}>
               <span className="font-sans text-xl font-semibold tracking-[0.16em]">{t("MIRROR")}</span>

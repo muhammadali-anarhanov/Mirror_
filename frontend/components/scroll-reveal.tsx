@@ -7,6 +7,15 @@ import { useEffect } from "react";
  * visible without JavaScript and for visitors who prefer reduced motion.
  */
 export function ScrollReveal({ selector = "main section, main article, main [data-reveal]" }: { selector?: string }) {
+  // Shadow under the sticky navigation once the page is scrolled.
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>(".marketing-header");
+    if (!header) return;
+    const update = () => header.classList.toggle("is-scrolled", window.scrollY > 8);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) return;
     const nodes = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter((node) => node.getBoundingClientRect().top > window.innerHeight * 0.9);

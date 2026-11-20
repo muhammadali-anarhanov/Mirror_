@@ -4393,3 +4393,8 @@ body:has(.mirror-auth-page) {
 .mirror-exit-dialog .mirror-inline-error { color: #b91c1c; }
 .mirror-exit-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .mirror-exit-actions .mirror-secondary-button { color: #0d1a3a; border-color: #cdd8ee; background: #fff; }
+
+/* Public site: the navigation stays at the top while scrolling. */
+.marketing-shell .marketing-header { transition: box-shadow 200ms ease, background-color 200ms ease; }
+.marketing-shell .marketing-header.is-scrolled { background-color: rgba(248, 250, 252, 0.94); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+html:has(.marketing-shell) { scroll-padding-top: 96px; }
